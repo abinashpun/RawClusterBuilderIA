@@ -142,9 +142,7 @@ int MyRawClusterBuilder::End(PHCompositeNode *topNode) {
 // Private helper methods: CorrectPhi and CreateNodes
 // ----------------------------------------------------------------------------
 
-bool MyRawClusterBuilder::CorrectPhi(RawCluster* cluster, 
-                                   RawTowerContainer* towers, 
-                                   RTGeomContainer *towerGeom) {
+bool MyRawClusterBuilder::CorrectPhi(RawCluster* cluster, RTContainer* towers, RTGeomContainer *towerGeom) {
     double sum = cluster->get_energy();
     double phimin = 999.;
     double phimax = -999.;
