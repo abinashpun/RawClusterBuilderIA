@@ -18,11 +18,10 @@
 #include <boost/graph/connected_components.hpp>
 
 template<class Hit> 
-int PHMakeGroups(std::vector<Hit>& hits, std::multimap<int,Hit>& groups) {
+int PHMakeGroups(std::vector<Hit>& hits, std::multimap<int, Hit>& groups) {
 
     using namespace boost;
     typedef adjacency_list <vecS, vecS, undirectedS> Graph;
-
     Graph G;
 
     // Sort in eta; if same eta then sort in phi.

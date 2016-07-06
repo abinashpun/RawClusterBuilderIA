@@ -15,7 +15,7 @@
 #include "g4cemc/RawTower.h"
 #include "g4cemc/RawTowerGeomContainer.h"
 #include "g4cemc/RawTowerContainer.h"
-#include "RawClusterv1.h"
+#include "include/RawClusterv1.h"
 #include "g4cemc/RawClusterContainer.h"
 
 using std::cout;
@@ -32,15 +32,12 @@ class RawTowerGeomContainer;
 class RTHelper;
 class ClusterHelper;
 
-typedef RawTowerDefs::keytype               KeyType;
-typedef RawTowerContainer::ConstRange       ConstRange;
-typedef RawTowerContainer::ConstIterator    ConstIterator;
-
 typedef RawTowerContainer                   RTContainer;
 typedef RawTowerGeomContainer               RTGeomContainer;
 typedef RawTowerContainer::ConstIterator    RTCItr;
 typedef RawTowerContainer::ConstRange       RTCRange;
-typedef std::multimap<int, RTHelper>::iterator ClusterItr;
+typedef std::multimap<int, RTHelper>        TowerMap;
+typedef std::pair<const int, RTHelper>      TowerPair;
 
 class MyRawClusterBuilder : public SubsysReco {
     public:
@@ -53,18 +50,28 @@ class MyRawClusterBuilder : public SubsysReco {
         void set_threshold_energy(const float e)    { _min_tower_e = e; }
         void checkenergy(const int i = 1)           { chkenergyconservation = i; }
     private:
-        RawClusterContainer*  _clusters;
-        float                 _min_tower_e;
+        vector<float> _energy; 
+        vector<float> _eta; 
+        vector<float> _phi;
+
+        RawClusterContainer* _clusters;
+        RTContainer*         _towers;
+        RTGeomContainer*     _towerGeom;
+        float                _min_tower_e;
         int                   chkenergyconservation;
         string                detector;
 
-        void _AssignClusterValues(int iCluster, float e, float eta, float phi);
+        void _AssignClusterValues(int iCluster);
         void _CreateNodes(PHCompositeNode *topNode);
+        vector<RTHelper> _GetSeedTowers();
         int  _NodeError(string nodeName, int retCode);
-        void _InsertSeed(vector<RTHelper>&, RTCItr, RTGeomContainer*);
-        void _PrintCluster(ClusterItr);
-        void _CheckEnergyConservation(RTContainer*);
+        void _InsertSeed(vector<RTHelper>&, RTCItr);
+        void _PrintCluster(TowerPair);
+        void _CheckEnergyConservation();
+        vector<float> _GetClustersEnergy(TowerMap);
+        vector<float> _GetClustersEta(TowerMap);
+        vector<float> _GetClustersPhi(TowerMap);
+        bool _CorrectPhi(RawCluster*);
 };
-
 
 #endif /* RAWCLUSTERBUILDER_H__ */

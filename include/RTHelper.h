@@ -7,7 +7,6 @@
 #include "g4cemc/RawTower.h"
 #include "g4cemc/RawTowerGeomContainer.h"
 #include "g4cemc/RawTowerContainer.h"
-#include "g4cemc/RawClusterContainer.h"
 
 class RTHelper {
     public:
