@@ -49,21 +49,21 @@ class MyRawClusterBuilder : public SubsysReco {
         int InitRun(PHCompositeNode *topNode);
         int process_event(PHCompositeNode *topNode);
         int End(PHCompositeNode *topNode);
-        void Detector(const std::string &d)       {detector = d;}
-        void set_threshold_energy(const float e)  {_min_tower_e = e;}
-        void checkenergy(const int i = 1)         {chkenergyconservation = i;}
+        void Detector(const string &d)              { detector = d; }
+        void set_threshold_energy(const float e)    { _min_tower_e = e; }
+        void checkenergy(const int i = 1)           { chkenergyconservation = i; }
     private:
         RawClusterContainer*  _clusters;
         float                 _min_tower_e;
         int                   chkenergyconservation;
         string                detector;
 
-        void AssignClusterValues(RawCluster* cluster, int iCluster);
-        void CreateNodes(PHCompositeNode *topNode);
-        bool CorrectPhi(RawCluster* cluster, RTContainer* towers, RTGeomContainer* towerGeom);
-        int  NodeError(string nodeName, int retCode);
-        void InsertSeed(vector<RTHelper>&, RTCItr, RTGeomContainer*);
-        void PrintCluster(ClusterItr);
+        void _AssignClusterValues(int iCluster, float e, float eta, float phi);
+        void _CreateNodes(PHCompositeNode *topNode);
+        bool _CorrectPhi(RawCluster* cluster, RTContainer* towers, RTGeomContainer* towerGeom);
+        int  _NodeError(string nodeName, int retCode);
+        void _InsertSeed(vector<RTHelper>&, RTCItr, RTGeomContainer*);
+        void _PrintCluster(ClusterItr);
 };
 
 

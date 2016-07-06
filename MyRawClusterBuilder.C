@@ -20,7 +20,7 @@ MyRawClusterBuilder::MyRawClusterBuilder(const string& name)
  * ----------------------------------------------------- */
 int MyRawClusterBuilder::InitRun(PHCompositeNode *topNode) {
     try {
-        CreateNodes(topNode);
+        _CreateNodes(topNode);
     } catch (std::exception &e) {
         cout << PHWHERE << ": " << e.what() << endl;
         throw;
@@ -37,14 +37,14 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     string nodeName;
 
     // Grab the container of RawTowers (kinematic info).
-    nodeName = "TOWER_CALIB_" + detector;
-    RawTowerContainer* towers = findNode::getClass<RawTowerContainer>(topNode, nodeName.c_str());
-    if (!towers) return NodeError(nodeName, Fun4AllReturnCodes::DISCARDEVENT);
+    nodeName                    = "TOWER_CALIB_" + detector;
+    RawTowerContainer* towers   = findNode::getClass<RawTowerContainer>(topNode, nodeName.c_str());
+    if (!towers) return _NodeError(nodeName, Fun4AllReturnCodes::DISCARDEVENT);
 
     // Grab the container of RawTowerGeoms (tower geometry info).
-    nodeName = "TOWERGEOM_" + detector;
-    RTGeomContainer *towerGeom = findNode::getClass<RTGeomContainer>(topNode,nodeName.c_str());
-    if (!towerGeom) return NodeError(nodeName, Fun4AllReturnCodes::ABORTEVENT);
+    nodeName                    = "TOWERGEOM_" + detector;
+    RTGeomContainer *towerGeom  = findNode::getClass<RTGeomContainer>(topNode,nodeName.c_str());
+    if (!towerGeom) return _NodeError(nodeName, Fun4AllReturnCodes::ABORTEVENT);
     
     // Store the number of bins in phi as a static value, as it should be. 
     RTHelper::set_maxphibin(towerGeom->get_phibins());
@@ -56,7 +56,7 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     for (itr = itrPair.first; itr != itrPair.second; itr++) {
         // Note: itr has the form of pair(int id, RawTower*).
         if (itr->second->get_energy() > _min_tower_e) {
-            InsertSeed(seedTowers, itr, towerGeom);
+            _InsertSeed(seedTowers, itr, towerGeom);
         }
     }
     cout << "seedTowers.size() = " << seedTowers.size() << endl;
@@ -78,41 +78,32 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
         RawCluster *rawCluster = _clusters->getCluster(clusterID); 
         if (!rawCluster) ClusterHelper::NewCluster(rawCluster, _clusters);
 
-        // Incorporate the tower's position/energy into this cluster's kinematic/geometric info.
-        float e = clusteredTower->get_energy();
-        ClusterHelper::energy[clusterID] += e;
-        ClusterHelper::eta[clusterID]    += e * ctitr->second.getEtaCenter();
-        ClusterHelper::phi[clusterID]    += e * ctitr->second.getPhiCenter();
-
         // Finally, add the tower to this cluster.
-        rawCluster->addTower(clusteredTower->get_id(), e);
-        if (verbosity) PrintCluster(ctitr);
+        rawCluster->addTower(clusteredTower->get_id(), clusteredTower->get_energy());
+        if (verbosity) _PrintCluster(ctitr);
     }
+
+    // Get cluster id-indexed properties.
+    ClusterHelper::SetNClusters(_clusters->size());
+    vector<float> clustersEnergy = ClusterHelper::GetClustersEnergy(clusteredTowers, towers);
+    vector<float> clustersEta    = ClusterHelper::GetClustersEta(clusteredTowers, towers);
+    vector<float> clustersPhi    = ClusterHelper::GetClustersPhi(clusteredTowers, towers);
 
     unsigned nClusters = _clusters->size();
     for (unsigned iCluster = 0; iCluster < nClusters; iCluster++) {
-        if (ClusterHelper::energy[iCluster] > 0) {
-            ClusterHelper::eta[iCluster] /= ClusterHelper::energy[iCluster];
-            ClusterHelper::phi[iCluster] /= ClusterHelper::energy[iCluster];
-        } else {
-            ClusterHelper::eta[iCluster] = 0.0;
-            ClusterHelper::phi[iCluster] = 0.0;
-        }
-        // convert [0,2pi] to [-pi,pi] for slat geometry(L. Xue)
-        if(ClusterHelper::phi[iCluster] > M_PI) {
-            ClusterHelper::phi[iCluster] = ClusterHelper::phi[iCluster] - 2.*M_PI; 
-        }
-
         // Set energy, eta, phi of the cluster.
-        AssignClusterValues(_clusters->getCluster(iCluster), iCluster);
+        float e   = clustersEnergy[iCluster];
+        float eta = clustersEta[iCluster];
+        float phi = clustersPhi[iCluster];
+        _AssignClusterValues(iCluster, e, eta, phi);
     }
 
-    // Correct mean Phi calculation for clusters at Phi discontinuity
+    // Correct the mean Phi calculation for clusters at Phi discontinuity
     // Assumes that Phi goes from -pi to +pi
     for (unsigned iCluster = 0; iCluster < nClusters; iCluster++) {
         RawCluster *cluster = _clusters->getCluster(iCluster);
         float oldphi = cluster->get_phi();
-        bool corr = CorrectPhi(cluster, towers,towerGeom);
+        bool corr = _CorrectPhi(cluster, towers,towerGeom);
         if (corr && verbosity) {
             cout << PHWHERE << " Cluster Phi corrected: " 
                       << oldphi << " " << cluster->get_phi() << endl;
@@ -139,10 +130,10 @@ int MyRawClusterBuilder::End(PHCompositeNode *topNode) {
 }
 
 // ----------------------------------------------------------------------------
-// Private helper methods: CorrectPhi and CreateNodes
+// Private helper methods.
 // ----------------------------------------------------------------------------
 
-bool MyRawClusterBuilder::CorrectPhi(RawCluster* cluster, RTContainer* towers, RTGeomContainer *towerGeom) {
+bool MyRawClusterBuilder::_CorrectPhi(RawCluster* cluster, RTContainer* towers, RTGeomContainer *towerGeom) {
     double sum = cluster->get_energy();
     double phimin = 999.;
     double phimax = -999.;
@@ -187,7 +178,7 @@ bool MyRawClusterBuilder::CorrectPhi(RawCluster* cluster, RTContainer* towers, R
  * Initialize values of first four attributes and        *
  * call parent constructor (SubsysReco).                 *
  * ----------------------------------------------------- */
-void MyRawClusterBuilder::CreateNodes(PHCompositeNode *topNode) {
+void MyRawClusterBuilder::_CreateNodes(PHCompositeNode *topNode) {
     PHNodeIterator iter(topNode);
     // Grab the cEMC node
     PHCompositeNode *dstNode = static_cast<PHCompositeNode*>(
@@ -212,17 +203,17 @@ void MyRawClusterBuilder::CreateNodes(PHCompositeNode *topNode) {
 }
 
 // Serves to make ugly code in process_event less ugly.
-int MyRawClusterBuilder::NodeError(string nodeName, int retCode) {
+int MyRawClusterBuilder::_NodeError(string nodeName, int retCode) {
     cout << PHWHERE << ": Could not find node " 
          << nodeName.data() << endl;
     return retCode;
 }
 
-void MyRawClusterBuilder::AssignClusterValues(RawCluster* cluster, int iCluster) {
-
-    cluster->set_energy(ClusterHelper::energy[iCluster]);
-    cluster->set_eta(ClusterHelper::eta[iCluster]);
-    cluster->set_phi(ClusterHelper::phi[iCluster]);
+void MyRawClusterBuilder::_AssignClusterValues(int iCluster, float e, float eta, float phi) {
+    RawCluster* cluster = _clusters->getCluster(iCluster);
+    cluster->set_energy(e);
+    cluster->set_eta(eta);
+    cluster->set_phi(phi);
     if (verbosity) {
         cout << " (eta,phi,e) = (" << cluster->get_eta() << ", "
              << cluster->get_phi() << ","
@@ -232,7 +223,7 @@ void MyRawClusterBuilder::AssignClusterValues(RawCluster* cluster, int iCluster)
 }
 
 // Given iterator to a seed tower, place relevant info into vector of seed towers.
-void MyRawClusterBuilder::InsertSeed(vector<RTHelper>&  vec, 
+void MyRawClusterBuilder::_InsertSeed(vector<RTHelper>&  vec, 
                                      RTCItr             seedItr, 
                                      RTGeomContainer*    towerGeom) {
         // Store the RTC pair elements separately.
@@ -245,7 +236,7 @@ void MyRawClusterBuilder::InsertSeed(vector<RTHelper>&  vec,
         vec.push_back(rtHelper);
 }
 
-void MyRawClusterBuilder::PrintCluster(ClusterItr ctitr) {
+void MyRawClusterBuilder::_PrintCluster(ClusterItr ctitr) {
     cout << "MyRawClusterBuilder id: " << (ctitr->first) 
         << " Tower: " << " (iEta,iPhi) = (" << ctitr->second.get_bineta() 
         << "," << ctitr->second.get_binphi() << ") " << " (eta,phi,e) = (" 
