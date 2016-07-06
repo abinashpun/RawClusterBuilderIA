@@ -87,7 +87,7 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     ClusterHelper::SetNClusters(_clusters->size());
     vector<float> clustersEnergy = ClusterHelper::GetClustersEnergy(clusteredTowers, towers);
     vector<float> clustersEta    = ClusterHelper::GetClustersEta(clusteredTowers, towers);
-    vector<float> clustersPhi    = ClusterHelper::GetClustersPhi(clusteredTowers, towers);
+    vector<float> clustersPhi    = ClusterHelper::GetClustersPhi(clusteredTowers, towers, _clusters, towerGeom);
 
     unsigned nClusters = _clusters->size();
     for (unsigned iCluster = 0; iCluster < nClusters; iCluster++) {
@@ -98,30 +98,8 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
         _AssignClusterValues(iCluster, e, eta, phi);
     }
 
-    // Correct the mean Phi calculation for clusters at Phi discontinuity
-    // Assumes that Phi goes from -pi to +pi
-    for (unsigned iCluster = 0; iCluster < nClusters; iCluster++) {
-        RawCluster *cluster = _clusters->getCluster(iCluster);
-        float oldphi = cluster->get_phi();
-        bool corr = _CorrectPhi(cluster, towers,towerGeom);
-        if (corr && verbosity) {
-            cout << PHWHERE << " Cluster Phi corrected: " 
-                      << oldphi << " " << cluster->get_phi() << endl;
-        }
-    }
-
-    if (chkenergyconservation) {
-        double ecluster = _clusters->getTotalEdep();
-        double etower   = towers->getTotalEdep();
-        if (ecluster > 0 && (fabs(etower - ecluster) / ecluster) > 1e-9) {
-            cout << "energy conservation violation: ETower: " << etower
-                 << " ECluster: " << ecluster 
-                 << " diff: " << etower - ecluster << endl;
-        } else if (etower != 0) {
-            cout << "energy conservation violation: ETower: " << etower
-                 << " ECluster: " << ecluster << endl;
-        }
-    }
+    if (chkenergyconservation) _CheckEnergyConservation(towers);     
+    
     return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -133,45 +111,19 @@ int MyRawClusterBuilder::End(PHCompositeNode *topNode) {
 // Private helper methods.
 // ----------------------------------------------------------------------------
 
-bool MyRawClusterBuilder::_CorrectPhi(RawCluster* cluster, RTContainer* towers, RTGeomContainer *towerGeom) {
-    double sum = cluster->get_energy();
-    double phimin = 999.;
-    double phimax = -999.;
-    RawCluster::TowerConstRange begin_end = cluster->get_towers();
-    RawCluster::TowerConstIterator iter;
-    for (iter = begin_end.first; iter != begin_end.second; ++iter) { 
-        RawTower* tmpt = towers->getTower(iter->first);
-        double phi = towerGeom->get_phicenter(tmpt->get_binphi());
-        if(phi > M_PI) phi = phi - 2.*M_PI; 
-        if (phi < phimin) {
-            phimin = phi;
-        }
-        if (phi > phimax) {
-            phimax = phi;
-        }
+void MyRawClusterBuilder::_CheckEnergyConservation(RTContainer* towers) {
+    double ecluster = _clusters->getTotalEdep();
+    double etower   = towers->getTotalEdep();
+    if (ecluster > 0 && (fabs(etower - ecluster) / ecluster) > 1e-9) {
+        cout << "energy conservation violation: ETower: " << etower
+             << " ECluster: " << ecluster 
+             << " diff: " << etower - ecluster << endl;
+    } else if (etower != 0) {
+        cout << "energy conservation violation: ETower: " << etower
+             << " ECluster: " << ecluster << endl;
     }
-
-    // cluster is not at phi discontinuity
-    if ((phimax - phimin) < 3.) return false; 
-
-    float mean = 0.;
-    for (iter =begin_end.first; iter != begin_end.second; ++iter) { 
-        RawTower* tmpt = towers->getTower(iter->first);
-        double e = tmpt->get_energy();
-        double phi = towerGeom->get_phicenter(tmpt->get_binphi());
-        if(phi > M_PI) phi = phi - 2.*M_PI; 
-        if (phi < 0.) {
-            phi = phi + 2.*M_PI;  // shift phi range for correct mean calculation
-        }
-        mean += e * phi;
-    }
-    mean = mean / sum;
-    if (mean > M_PI) {
-        mean = mean - 2.*M_PI;  // shift back
-    }
-    cluster->set_phi(mean);
-    return true; // mean phi was corrected
 }
+
 
 /* ----------------------------------------------------- *
  * MyRawClusterBuilder::CreateNodes()                          *

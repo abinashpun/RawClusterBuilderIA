@@ -60,10 +60,10 @@ class MyRawClusterBuilder : public SubsysReco {
 
         void _AssignClusterValues(int iCluster, float e, float eta, float phi);
         void _CreateNodes(PHCompositeNode *topNode);
-        bool _CorrectPhi(RawCluster* cluster, RTContainer* towers, RTGeomContainer* towerGeom);
         int  _NodeError(string nodeName, int retCode);
         void _InsertSeed(vector<RTHelper>&, RTCItr, RTGeomContainer*);
         void _PrintCluster(ClusterItr);
+        void _CheckEnergyConservation(RTContainer*);
 };
 
 
