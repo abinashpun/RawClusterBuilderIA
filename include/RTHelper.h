@@ -14,23 +14,29 @@ class RTHelper {
         virtual ~RTHelper() {}
         bool is_adjacent(RTHelper &);
         void set_id(const int i)                { id = i; }
+        void set_energy(float e)                { energy = e; }
         void set_etaCenter(float eta)           { etaCenter = eta; }
         void set_phiCenter(float phi)           { phiCenter = phi; }
         void setCenter(RawTowerGeomContainer*);
         int get_id() const                      { return id; }
         int get_bineta() const                  { return bineta; }
         int get_binphi() const                  { return binphi; }
+        float get_energy() const                  { return energy; }
         float getEtaCenter() const              { return etaCenter; }
         float getPhiCenter() const              { return phiCenter; }
         static void set_maxphibin(const int i)  { maxphibin = i; }
+        static void set_maxetabin(const int i)  { maxetabin = i; }
         static int get_maxphibin()              { return maxphibin; }
+        static int get_maxetabin()              { return maxetabin; }
         static RawTower* GetRawTower(RTHelper, RawTowerContainer*);
     protected:
         static void ExitOnIDMismatch(int id1, int id2);
         static int maxphibin;
+        static int maxetabin;
         RawTowerDefs::keytype id;
         float   etaCenter, phiCenter;
         int     bineta, binphi;
+        float energy;
 };
 int RTHelper::maxphibin = -10;
 
@@ -53,6 +59,7 @@ RawTower* RTHelper::GetRawTower(RTHelper towerHelper, RawTowerContainer* towers)
 RTHelper::RTHelper(RawTower *rt) : id(-1) {
     bineta = rt->get_bineta();
     binphi = rt->get_binphi();
+    energy = rt->get_energy();
 }
 
 // note: true for diagonally adjacent

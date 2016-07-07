@@ -1,7 +1,8 @@
 #include "MyRawClusterBuilder.h"
-#include "include/RTHelper.h"
-#include "include/ClusterHelper.h"
-#include "include/PHMakeGroups.h"
+#include "RTHelper.h"
+#include "ClusterHelper.h"
+#include "PHMakeGroups.h"
+#include "IslandAlgorithm.h"
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
 #include <boost/foreach.hpp>
 
@@ -34,6 +35,8 @@ int MyRawClusterBuilder::InitRun(PHCompositeNode *topNode) {
  * MyRawClusterBuilder::process_event(...)                        *
  * ------------------------------------------------------------ */
 int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
+    namespace IAlg = IslandAlgorithm;
+
     // Clear any previously used helper objects. 
     ClusterHelper::NewEvent();
     string nodeName;
@@ -50,11 +53,14 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     
     // Store the number of bins in phi as a static value, as it should be. 
     RTHelper::set_maxphibin(_towerGeom->get_phibins());
+    RTHelper::set_maxetabin(_towerGeom->get_etabins());
 
     // Make the list of _towers above minimum energy threshold.
-    vector<RTHelper> seedTowers = _GetSeedTowers();
+    //vector<RTHelper> seedTowers = _GetSeedTowers();
+    vector<RTHelper> seedTowers = IAlg::GetSeedTowers(_towers, _towerGeom, 0.);
     cout << "seedTowers.size() = " << seedTowers.size() << endl;
 
+    /*
     // Cluster the towers. 
     TowerMap clusteredTowers;
     PHMakeGroups(seedTowers, clusteredTowers);
@@ -84,6 +90,7 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     }
 
     if (chkenergyconservation) _CheckEnergyConservation();
+    */
     return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -115,18 +122,6 @@ int MyRawClusterBuilder::_NodeError(string nodeName, int retCode) {
     return retCode;
 }
 
-// Given iterator to a seed tower, place relevant info into vector of seed towers.
-void MyRawClusterBuilder::_InsertSeed(vector<RTHelper>&  vec, RTCItr seedItr)  {
-    // Store the RTC pair elements separately.
-    RawTowerDefs::keytype seedID      = seedItr->first;
-    RawTower* seedTower = seedItr->second;
-    // Wrap RawTower info inside an RTHelper. 
-    RTHelper rtHelper(seedTower);
-    rtHelper.set_id(seedID);
-    rtHelper.setCenter(_towerGeom);
-    vec.push_back(rtHelper);
-}
-
 void MyRawClusterBuilder::_PrintCluster(TowerPair ctitr) {
     cout << "MyRawClusterBuilder id: " << (ctitr.first) 
         << " Tower: " << " (iEta,iPhi) = (" << ctitr.second.get_bineta() 
@@ -147,6 +142,18 @@ vector<RTHelper> MyRawClusterBuilder::_GetSeedTowers() {
         }
     }
     return seedTowers;
+}
+
+// Given iterator to a seed tower, place relevant info into vector of seed towers.
+void MyRawClusterBuilder::_InsertSeed(vector<RTHelper>&  vec, RTCItr seedItr)  {
+    // Store the RTC pair elements separately.
+    RawTowerDefs::keytype seedID      = seedItr->first;
+    RawTower* seedTower = seedItr->second;
+    // Wrap RawTower info inside an RTHelper. 
+    RTHelper rtHelper(seedTower);
+    rtHelper.set_id(seedID);
+    rtHelper.setCenter(_towerGeom);
+    vec.push_back(rtHelper);
 }
 
 
