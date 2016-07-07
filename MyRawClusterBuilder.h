@@ -32,12 +32,11 @@ class RawTowerGeomContainer;
 class RTHelper;
 class ClusterHelper;
 
-typedef RawTowerContainer                   RTContainer;
-typedef RawTowerGeomContainer               RTGeomContainer;
-typedef RawTowerContainer::ConstIterator    RTCItr;
-typedef RawTowerContainer::ConstRange       RTCRange;
-typedef std::multimap<int, RTHelper>        TowerMap;
-typedef std::pair<const int, RTHelper>      TowerPair;
+typedef RawTowerContainer                        RTContainer;
+typedef RawTowerGeomContainer                    RTGeomContainer;
+typedef std::multimap<int, RTHelper>             TowerMap;
+typedef std::pair<const int, RTHelper>           TowerPair;
+typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
 class MyRawClusterBuilder : public SubsysReco {
     public:

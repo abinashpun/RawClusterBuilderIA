@@ -18,9 +18,9 @@ typedef RawTowerContainer            RTContainer;
 typedef RawTowerGeomContainer        RTGeomContainer;
 typedef std::multimap<int, RTHelper> TowerMap;
 typedef std::pair<const int, RTHelper> TowerPair;
+typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 #endif
 
-typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
 namespace IslandAlgorithm {
     using std::list;
@@ -46,7 +46,6 @@ namespace IslandAlgorithm {
     // 1. The island algorithm starts by a search for seeds. Seeds are defined as 
     // crystals with an energy above a certain threshold on transverse energy. 
     list<RTHelper> GetSeedTowers(RTContainer* _towers, RTGeomContainer* _towerGeom, float _threshold=0.) {
-
         // Collect all towers above threshold.
         list<RTHelper> seedTowers;
         foreach (RawTowerPair& towerMap, _towers->getTowers()) {
@@ -57,7 +56,6 @@ namespace IslandAlgorithm {
                 seedTowers.push_back(rtHelper);
             }
         }
-        
         // Find towers with higher-energy adjacent towers.
         list<RTHelper> toRemove;
         seedTowers.sort(comp);
@@ -68,14 +66,43 @@ namespace IslandAlgorithm {
                 }
             }
         }
-
         // Remove those seeds that are adjacent to higher energy ones.
         foreach (RTHelper& badSeed, toRemove) {
             seedTowers.remove(badSeed);
         }
-
         PrintSeeds(seedTowers);
-
+        // todo: re-sort so that high energy first.
         return seedTowers;
     }
+
+
+    void ClusterTowers(list<RTHelper> seedTowers, TowerMap clusteredTowers, RTContainer* _towers) {
+        int ClusterID = 0;
+        foreach (RTHelper& seed, seedTowers) {
+            //PhiCluster(seed, clusteredTowers, _towers);
+            /*
+            binEta = seed.get_bineta();
+            binPhi = seed.get_binphi();
+            RawTower* tower;
+            while ( 
+            ClusterID++;
+            */
+            while (haven't found a hole or rise in energy):
+                etaRight++;
+                searchNorth();
+                searchSouth();
+            while (haven't found a hole or rise in energy):
+                etaLeft++;
+                searchNorth();
+                searchSouth();
+        }
+    }
+
+    /*
+    void PhiCluster(RTHelper& seed, TowerMap clusteredTowers, RTContainer* _towers) {
+    }
+
+        groups.insert(std::make_pair(component[i], hits[i]));
+        */
+
 }
