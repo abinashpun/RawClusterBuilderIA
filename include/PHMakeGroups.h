@@ -48,6 +48,8 @@ int PHMakeGroups(std::vector<Hit>& hits, std::multimap<int, Hit>& groups) {
         comps.insert(component[i]);
         groups.insert(std::make_pair(component[i], hits[i]));
     } 
+    std::cout << "unique groups: " << comps.size();
+
 
     return 0; 
 }

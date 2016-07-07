@@ -39,6 +39,7 @@ class RTHelper {
         float energy;
 };
 int RTHelper::maxphibin = -10;
+int RTHelper::maxetabin = -10;
 
 void RTHelper::setCenter(RawTowerGeomContainer* towerGeom) {
     etaCenter = towerGeom->get_etacenter(bineta);
@@ -83,6 +84,9 @@ bool operator<(const RTHelper& a, const RTHelper& b) {
     return a.get_binphi() < b.get_binphi();
 }
 
+bool operator==(const RTHelper& a, const RTHelper& b) {
+    return a.get_id() == b.get_id();
+}
 void RTHelper::ExitOnIDMismatch(int id1, int id2) {
     cout <<__PRETTY_FUNCTION__
          << " - Fatal Error - id mismatch. internal: " 

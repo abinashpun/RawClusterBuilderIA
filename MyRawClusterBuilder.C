@@ -1,7 +1,7 @@
 #include "MyRawClusterBuilder.h"
 #include "RTHelper.h"
 #include "ClusterHelper.h"
-#include "PHMakeGroups.h"
+//#include "PHMakeGroups.h"
 #include "IslandAlgorithm.h"
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
 #include <boost/foreach.hpp>
@@ -57,14 +57,15 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
 
     // Make the list of _towers above minimum energy threshold.
     //vector<RTHelper> seedTowers = _GetSeedTowers();
-    vector<RTHelper> seedTowers = IAlg::GetSeedTowers(_towers, _towerGeom, 0.);
+    set_threshold_energy(0.1);
+    std::list<RTHelper> seedTowers = IAlg::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
     cout << "seedTowers.size() = " << seedTowers.size() << endl;
 
-    /*
     // Cluster the towers. 
-    TowerMap clusteredTowers;
-    PHMakeGroups(seedTowers, clusteredTowers);
+    //TowerMap clusteredTowers;
+    //PHMakeGroups(seedTowers, clusteredTowers);
     
+    /*
     // Fill _clusters (now empty) with the clusteredTowers and calculate their values.
     BOOST_FOREACH (TowerPair& ctitr, clusteredTowers) {
         // Store this cluster's id and the associated RawTower.
@@ -133,6 +134,7 @@ void MyRawClusterBuilder::_PrintCluster(TowerPair ctitr) {
 }
 
 vector<RTHelper> MyRawClusterBuilder::_GetSeedTowers() {
+    set_threshold_energy(0.4);
     vector<RTHelper> seedTowers;
     RTCRange itrPair = _towers->getTowers();
     for (RTCItr itr = itrPair.first; itr != itrPair.second; itr++) {
