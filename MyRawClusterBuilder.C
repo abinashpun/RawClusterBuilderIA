@@ -5,7 +5,7 @@
 #include "IslandAlgorithm.h"
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
 #include <boost/foreach.hpp>
-#define foreach BOOST_FOREACH
+#define foreach foreach
 
 /* ------------------------------------------------------ *
  * MyRawClusterBuilder::MyRawClusterBuilder()                   *
@@ -36,6 +36,7 @@ int MyRawClusterBuilder::InitRun(PHCompositeNode *topNode) {
  * MyRawClusterBuilder::process_event(...)                        *
  * ------------------------------------------------------------ */
 int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
+    namespace IslandAlgorithm = IAlgorithm;
 
     // Clear any previously used helper objects. 
     ClusterHelper::NewEvent();
@@ -58,17 +59,17 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     // Make the list of _towers above minimum energy threshold.
     //vector<RTHelper> seedTowers = _GetSeedTowers();
     set_threshold_energy(0.1);
-    std::list<RTHelper> seedTowers = IslandAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
+    std::list<RTHelper> allTowers = _GetAllTowers();
+    std::list<RTHelper> seedTowers = IAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
     cout << "seedTowers.size() = " << seedTowers.size() << endl;
 
     // Cluster the towers. 
-    ClusterTowers(seedTowers, clusteredTowers, _towers);
-    //TowerMap clusteredTowers;
+    TowerMap clusteredTowers = IAlgorithm::GetClusteredTowers(seedTowers, allTowers);
     //PHMakeGroups(seedTowers, clusteredTowers);
     
     /*
     // Fill _clusters (now empty) with the clusteredTowers and calculate their values.
-    BOOST_FOREACH (TowerPair& ctitr, clusteredTowers) {
+    foreach (TowerPair& ctitr, clusteredTowers) {
         // Store this cluster's id and the associated RawTower.
         int clusterID            = ctitr.first;
         RawTower *clusteredTower = RTHelper::GetRawTower(ctitr.second, _towers);
@@ -134,19 +135,17 @@ void MyRawClusterBuilder::_PrintCluster(TowerPair ctitr) {
         << endl;
 }
 
-vector<RTHelper> MyRawClusterBuilder::_GetSeedTowers() {
+std::list<RTHelper> MyRawClusterBuilder::_GetAllTowers() {
     set_threshold_energy(0.4);
-    vector<RTHelper> seedTowers;
+    std::list<RTHelper> seedTowers;
     foreach (RawTowerPair& towerPair, _towers->getTowers()) {
-        if (towerPair.second.get_energy() > _min_tower_e) {
-            _InsertSeed(seedTowers, towerPair);
-        }
+        _InsertTower(seedTowers, towerPair);
     }
     return seedTowers;
 }
 
-// Given iterator to a seed tower, place relevant info into vector of seed towers.
-void MyRawClusterBuilder::_InsertSeed(vector<RTHelper>&  vec, RawTowerPair towerPair)  {
+// Given iterator to a seed tower, place relevant info into std::vector of seed towers.
+void MyRawClusterBuilder::_InsertTower(std::list<RTHelper>&  vec, RawTowerPair towerPair)  {
     // Store the RTC pair elements separately.
     RawTowerDefs::keytype seedID      = towerPair.first;
     RawTower* seedTower = towerPair.second;
@@ -159,18 +158,18 @@ void MyRawClusterBuilder::_InsertSeed(vector<RTHelper>&  vec, RawTowerPair tower
 
 
 // 1.
-vector<float> MyRawClusterBuilder::_GetClustersEnergy(TowerMap clusteredTowers) {
-    vector<float> energy;
-    BOOST_FOREACH (TowerPair& ctitr, clusteredTowers) {
+std::vector<float> MyRawClusterBuilder::_GetClustersEnergy(TowerMap clusteredTowers) {
+    std::vector<float> energy;
+    foreach (TowerPair& ctitr, clusteredTowers) {
         energy[ctitr.first] += RTHelper::GetRawTower(ctitr.second, _towers)->get_energy();
     }
     return energy;
 }
 
 // 2.
-vector<float> MyRawClusterBuilder::_GetClustersEta(TowerMap clusteredTowers) {
-    vector<float> eta;
-    BOOST_FOREACH (TowerPair& ctitr, clusteredTowers) {
+std::vector<float> MyRawClusterBuilder::_GetClustersEta(TowerMap clusteredTowers) {
+    std::vector<float> eta;
+    foreach (TowerPair& ctitr, clusteredTowers) {
         RawTower *rawTower  = RTHelper::GetRawTower(ctitr.second, _towers);
         eta[ctitr.first]   += rawTower->get_energy() * ctitr.second.getEtaCenter();
     }
@@ -183,10 +182,10 @@ vector<float> MyRawClusterBuilder::_GetClustersEta(TowerMap clusteredTowers) {
 }
 
 // 3.
-vector<float> MyRawClusterBuilder::_GetClustersPhi(TowerMap clusteredTowers) {
-    vector<float> phi;
+std::vector<float> MyRawClusterBuilder::_GetClustersPhi(TowerMap clusteredTowers) {
+    std::vector<float> phi;
     // First, get all constitutent tower phi's as an energy-weighted sum.
-    BOOST_FOREACH (TowerPair& ctitr, clusteredTowers) {
+    foreach (TowerPair& ctitr, clusteredTowers) {
         RawTower *rawTower = RTHelper::GetRawTower(ctitr.second, _towers);
         phi[ctitr.first] += rawTower->get_energy() * ctitr.second.getPhiCenter();
     }

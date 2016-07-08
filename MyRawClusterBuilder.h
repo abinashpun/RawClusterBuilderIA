@@ -21,7 +21,6 @@
 using std::cout;
 using std::endl;
 using std::string;
-using std::vector;
 
 // Forward class declarations.
 class PHCompositeNode;
@@ -49,28 +48,27 @@ class MyRawClusterBuilder : public SubsysReco {
         void set_threshold_energy(const float e)    { _min_tower_e = e; }
         void checkenergy(const int i = 1)           { chkenergyconservation = i; }
     private:
-        vector<float> _energy; 
-        vector<float> _eta; 
-        vector<float> _phi;
+        RawClusterContainer*_clusters;
+        RTContainer*        _towers;
+        RTGeomContainer*    _towerGeom;
+        float               _min_tower_e;
+        int                 chkenergyconservation;
+        string              detector;
+        std::vector<float>  _energy; 
+        std::vector<float>  _eta; 
+        std::vector<float>  _phi;
 
-        RawClusterContainer* _clusters;
-        RTContainer*         _towers;
-        RTGeomContainer*     _towerGeom;
-        float                _min_tower_e;
-        int                   chkenergyconservation;
-        string                detector;
-
+        int  _NodeError(string nodeName, int retCode);
         void _AssignClusterValues(int iCluster);
         void _CreateNodes(PHCompositeNode *topNode);
-        vector<RTHelper> _GetSeedTowers();
-        int  _NodeError(string nodeName, int retCode);
-        void _InsertSeed(vector<RTHelper>&, RTCItr);
         void _PrintCluster(TowerPair);
         void _CheckEnergyConservation();
-        vector<float> _GetClustersEnergy(TowerMap);
-        vector<float> _GetClustersEta(TowerMap);
-        vector<float> _GetClustersPhi(TowerMap);
+        std::vector<float> _GetClustersEnergy(TowerMap);
+        std::vector<float> _GetClustersEta(TowerMap);
+        std::vector<float> _GetClustersPhi(TowerMap);
+        std::list<RTHelper> _GetAllTowers();
+        void _InsertTower(std::list<RTHelper>&, RawTowerPair);
         bool _CorrectPhi(RawCluster*);
 };
 
-#endif /* RAWCLUSTERBUILDER_H__ */
+#endif 

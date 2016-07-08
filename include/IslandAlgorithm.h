@@ -1,4 +1,3 @@
-#include <vector>
 #include <map>
 #include "RTHelper.h"
 #include "PHMakeGroups.h"
@@ -23,31 +22,22 @@ typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
 
 namespace IslandAlgorithm {
-    using std::list;
-    using std::vector;
     using std::cout;
     using std::endl;
 
-    // compare function for std::sort.
-    bool comp(RTHelper tower1, RTHelper tower2) { 
-        return tower1.get_energy() < tower2.get_energy(); 
-    }
+    // Required forward declarations. Definitions at end of file.
+    bool lessEnergy(RTHelper tower1, RTHelper tower2);
+    bool moreEnergy(RTHelper tower1, RTHelper tower2);
+    void PrintSeeds(std::list<RTHelper>& seeds);
 
-    void PrintSeeds(list<RTHelper>& seeds) {
-        foreach (RTHelper& seed, seeds) {
-            cout << "seed (energy, eta, phi) = (" 
-                 << seed.get_energy() << ", "
-                 << seed.getEtaCenter() << ", "
-                 << seed.getPhiCenter() << ")" 
-                 << endl;
-        }
-    }
+    /* ------------------------------------------------------------------------------------------ *
+       1.   The island algorithm starts by a search for seeds. Seeds are defined as                
+            crystals with an energy above a certain threshold on transverse energy.                
+     * ------------------------------------------------------------------------------------------ */
+    std::list<RTHelper> GetSeedTowers(RTContainer* _towers, RTGeomContainer* _towerGeom, float _threshold=0.) {
 
-    // 1. The island algorithm starts by a search for seeds. Seeds are defined as 
-    // crystals with an energy above a certain threshold on transverse energy. 
-    list<RTHelper> GetSeedTowers(RTContainer* _towers, RTGeomContainer* _towerGeom, float _threshold=0.) {
         // Collect all towers above threshold.
-        list<RTHelper> seedTowers;
+        std::list<RTHelper> seedTowers;
         foreach (RawTowerPair& towerMap, _towers->getTowers()) {
             if (towerMap.second->get_energy() > _threshold) {
                 RTHelper rtHelper(towerMap.second);
@@ -56,53 +46,79 @@ namespace IslandAlgorithm {
                 seedTowers.push_back(rtHelper);
             }
         }
+
         // Find towers with higher-energy adjacent towers.
-        list<RTHelper> toRemove;
-        seedTowers.sort(comp);
+        std::set<RTHelper> badSeeds;
+        seedTowers.sort(lessEnergy);
+        // Todo: this could _definitely_ be optimized. 
         foreach (RTHelper& tower1, seedTowers) {
             foreach (RTHelper& tower2, seedTowers) {
                 if (tower1.is_adjacent(tower2) && tower1.get_energy() < tower2.get_energy()) {
-                    toRemove.push_back(tower1);
+                    badSeeds.push_back(tower1);
                 }
             }
         }
+
         // Remove those seeds that are adjacent to higher energy ones.
-        foreach (RTHelper& badSeed, toRemove) {
+        foreach (RTHelper& badSeed, badSeeds) {
             seedTowers.remove(badSeed);
         }
+
+        // Order from hi-to-lo energy.
+        seedTowers.sort(moreEnergy);
+
         PrintSeeds(seedTowers);
-        // todo: re-sort so that high energy first.
         return seedTowers;
     }
 
 
-    void ClusterTowers(list<RTHelper> seedTowers, TowerMap clusteredTowers, RTContainer* _towers) {
+    /* ------------------------------------------------------------------------------------------ *
+       2.   Starting from the most energetic seed, the algorithm collects crystals belonging to 
+            a certain cluster. Moves both directions in phi, collecting all towers until it sees
+            a rise in energy, or a hole. The algorithm then steps in eta and makes another phi
+            search. The eta-steps are stopped when a rise in energy, or a hole, is encountered.
+            When in direction in eta is completed, the algorithm goes back to the seed position 
+            and works in the other eta direction. All towers are makred as belonging to that one 
+            cluster and can't be subsequently used to seed another. 
+     * ------------------------------------------------------------------------------------------ */
+    TowerMap GetClusteredTowers(std::list<RTHelper> seedTowers, std::list<RTHelper> allTowers) {
+
         int ClusterID = 0;
+        TowerMap clusteredTowers;
+
         foreach (RTHelper& seed, seedTowers) {
-            //PhiCluster(seed, clusteredTowers, _towers);
-            /*
-            binEta = seed.get_bineta();
-            binPhi = seed.get_binphi();
-            RawTower* tower;
-            while ( 
-            ClusterID++;
-            */
-            while (haven't found a hole or rise in energy):
-                etaRight++;
-                searchNorth();
-                searchSouth();
-            while (haven't found a hole or rise in energy):
-                etaLeft++;
-                searchNorth();
-                searchSouth();
+
+            // Begin by inserting the seed tower, which defines a cluster.
+            clusteredTowers.insert(std::make_pair(clusterId, seed));
+            float currentEnergy = seed.get_energy();
+            float currBinPhi = seed.getBinPhi();
+            float currBinEta = seed.getEtaPhi();
+            while (currentEnergy > _towers->getTower(currBinEta, ++currBinPhi)->get_energy()) {
+            }
+            clusterID++;
         }
     }
 
-    /*
-    void PhiCluster(RTHelper& seed, TowerMap clusteredTowers, RTContainer* _towers) {
+
+    // A simple comparator that orders RTHelpers in order of INCREASING energy.
+    bool lessEnergy(RTHelper tower1, RTHelper tower2) { 
+        return tower1.get_energy() < tower2.get_energy(); 
     }
 
-        groups.insert(std::make_pair(component[i], hits[i]));
-        */
+    // A simple comparator that orders RTHelpers in order of DECREASING energy.
+    bool moreEnergy(RTHelper tower1, RTHelper tower2) {
+        return !lessEnergy(tower1, tower2);
+    }
+
+    // Essentially a 'ToString' method for a list of seed towers.
+    void PrintSeeds(std::list<RTHelper>& seeds) {
+        foreach (RTHelper& seed, seeds) {
+            cout << "seed (energy, eta, phi) = (" 
+                 << seed.get_energy() << ", "
+                 << seed.getEtaCenter() << ", "
+                 << seed.getPhiCenter() << ")" 
+                 << endl;
+        }
+    }
 
 }

@@ -12,34 +12,36 @@ class RTHelper {
     public:
         RTHelper(RawTower *);
         virtual ~RTHelper() {}
-        bool is_adjacent(RTHelper &);
-        void set_id(const int i)                { id = i; }
-        void set_energy(float e)                { energy = e; }
-        void set_etaCenter(float eta)           { etaCenter = eta; }
-        void set_phiCenter(float phi)           { phiCenter = phi; }
+        bool isAdjacent(RTHelper &);
+        void setId(const int i)                 { id = i; }
+        void setEnergy(float e)                 { energy = e; }
         void setCenter(RawTowerGeomContainer*);
-        int get_id() const                      { return id; }
-        int get_bineta() const                  { return bineta; }
-        int get_binphi() const                  { return binphi; }
-        float get_energy() const                  { return energy; }
+        int getID() const                       { return id; }
+        int getBinEta() const                   { return bineta; }
+        int getBinPhi() const                   { return binphi; }
+        float getEnergy() const                 { return energy; }
+        void setEtaCenter(float eta)            { etaCenter = eta; }
+        void setPhiCenter(float phi)            { phiCenter = phi; }
         float getEtaCenter() const              { return etaCenter; }
         float getPhiCenter() const              { return phiCenter; }
-        static void set_maxphibin(const int i)  { maxphibin = i; }
-        static void set_maxetabin(const int i)  { maxetabin = i; }
-        static int get_maxphibin()              { return maxphibin; }
-        static int get_maxetabin()              { return maxetabin; }
+        static void setMaxPhiBin(const int i)   { maxPhiBin = i; }
+        static void setMaxEtaBin(const int i)   { maxEtaBin = i; }
+        static int getMaxPhiBin()               { return maxPhiBin; }
+        static int getMaxEtaBin()               { return maxEtaBin; }
         static RawTower* GetRawTower(RTHelper, RawTowerContainer*);
     protected:
-        static void ExitOnIDMismatch(int id1, int id2);
-        static int maxphibin;
-        static int maxetabin;
         RawTowerDefs::keytype id;
-        float   etaCenter, phiCenter;
-        int     bineta, binphi;
+        int bineta; 
+        int binphi;
         float energy;
+        float etaCenter; 
+        float phiCenter;
+        static int maxPhiBin;
+        static int maxEtaBin;
+        static void ExitOnIDMismatch(int id1, int id2);
 };
-int RTHelper::maxphibin = -10;
-int RTHelper::maxetabin = -10;
+int RTHelper::maxPhiBin = -10;
+int RTHelper::maxEtaBin = -10;
 
 void RTHelper::setCenter(RawTowerGeomContainer* towerGeom) {
     etaCenter = towerGeom->get_etacenter(bineta);
@@ -47,29 +49,29 @@ void RTHelper::setCenter(RawTowerGeomContainer* towerGeom) {
 }
 
 RawTower* RTHelper::GetRawTower(RTHelper towerHelper, RawTowerContainer* towers) {
-    int iPhi = towerHelper.get_binphi();
-    int iEta = towerHelper.get_bineta();
+    int iPhi = towerHelper.getBinPhi();
+    int iEta = towerHelper.getBinEta();
 
     // Ensure ids match. TODO: not really sure what this means?
     int eid = (int) RawTowerDefs::encode_towerid(towers->getCalorimeterID(), iEta, iPhi);
-    if (towerHelper.get_id() != eid) ExitOnIDMismatch(towerHelper.get_id(), eid);
+    if (towerHelper.getID() != eid) ExitOnIDMismatch(towerHelper.getID(), eid);
 
     return towers->getTower(iEta, iPhi);
 }
 
 RTHelper::RTHelper(RawTower *rt) : id(-1) {
-    bineta = rt->get_bineta();
-    binphi = rt->get_binphi();
-    energy = rt->get_energy();
+    bineta = rt->getBinEta();
+    binphi = rt->getBinPhi();
+    energy = rt->getEnergy();
 }
 
 // note: true for diagonally adjacent
-bool RTHelper::is_adjacent(RTHelper &tower) {
-    if (bineta - 1 <= tower.get_bineta() && tower.get_bineta()<=bineta+1) {
-        if(binphi-1<=tower.get_binphi() && tower.get_binphi()<=binphi+1) {
+bool RTHelper::isAdjacent(RTHelper &tower) {
+    if (bineta - 1 <= tower.getBinEta() && tower.getBinEta()<=bineta+1) {
+        if(binphi-1<=tower.getBinPhi() && tower.getBinPhi()<=binphi+1) {
             return true;
-        } else if(((tower.get_binphi() == maxphibin-1) && (binphi == 0)) || 
-                  ((tower.get_binphi() == 0) && (binphi == maxphibin-1))) {
+        } else if(((tower.getBinPhi() == maxPhiBin-1) && (binphi == 0)) || 
+                  ((tower.getBinPhi() == 0) && (binphi == maxPhiBin-1))) {
             return true;
         }
     }
@@ -78,14 +80,14 @@ bool RTHelper::is_adjacent(RTHelper &tower) {
 
 // Comparison first on bineta if not equal, else on binphi.
 bool operator<(const RTHelper& a, const RTHelper& b) {
-    if (a.get_bineta() != b.get_bineta()) {
-        return a.get_bineta() < b.get_bineta();
+    if (a.getBinEta() != b.getBinEta()) {
+        return a.getBinEta() < b.getBinEta();
     }
-    return a.get_binphi() < b.get_binphi();
+    return a.getBinPhi() < b.getBinPhi();
 }
 
 bool operator==(const RTHelper& a, const RTHelper& b) {
-    return a.get_id() == b.get_id();
+    return a.getID() == b.getID();
 }
 void RTHelper::ExitOnIDMismatch(int id1, int id2) {
     cout <<__PRETTY_FUNCTION__
