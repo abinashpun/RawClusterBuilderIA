@@ -63,6 +63,7 @@ RTHelper::RTHelper(RawTower *rt) : id(-1) {
     bineta = rt->getBinEta();
     binphi = rt->getBinPhi();
     energy = rt->getEnergy();
+    id = rt->get_id();
 }
 
 // note: true for diagonally adjacent
