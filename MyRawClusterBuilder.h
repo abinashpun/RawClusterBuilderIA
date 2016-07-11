@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 #include <string>
+#include <list>
 // Fun4All/PHENIX includes.
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllReturnCodes.h>

@@ -13,7 +13,7 @@ class RTHelper {
         RTHelper(RawTower *);
         virtual ~RTHelper() {}
         bool isAdjacent(RTHelper &);
-        void setId(const int i)                 { id = i; }
+        void setID(const int i)                 { id = i; }
         void setEnergy(float e)                 { energy = e; }
         void setCenter(RawTowerGeomContainer*);
         int getID() const                       { return id; }
@@ -60,9 +60,9 @@ RawTower* RTHelper::GetRawTower(RTHelper towerHelper, RawTowerContainer* towers)
 }
 
 RTHelper::RTHelper(RawTower *rt) : id(-1) {
-    bineta = rt->getBinEta();
-    binphi = rt->getBinPhi();
-    energy = rt->getEnergy();
+    bineta = rt->get_bineta();
+    binphi = rt->get_binphi();
+    energy = rt->get_energy();
     id = rt->get_id();
 }
 

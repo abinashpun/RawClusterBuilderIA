@@ -5,7 +5,7 @@
 #include "IslandAlgorithm.h"
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
 #include <boost/foreach.hpp>
-#define foreach foreach
+#define foreach BOOST_FOREACH
 
 /* ------------------------------------------------------ *
  * MyRawClusterBuilder::MyRawClusterBuilder()                   *
@@ -36,7 +36,7 @@ int MyRawClusterBuilder::InitRun(PHCompositeNode *topNode) {
  * MyRawClusterBuilder::process_event(...)                        *
  * ------------------------------------------------------------ */
 int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
-    namespace IslandAlgorithm = IAlgorithm;
+    namespace IAlgorithm = IslandAlgorithm;
 
     // Clear any previously used helper objects. 
     ClusterHelper::NewEvent();
@@ -53,11 +53,11 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     if (!_towerGeom) return _NodeError(nodeName, Fun4AllReturnCodes::ABORTEVENT);
     
     // Store the number of bins in phi as a static value, as it should be. 
-    RTHelper::set_maxphibin(_towerGeom->get_phibins());
-    RTHelper::set_maxetabin(_towerGeom->get_etabins());
+    RTHelper::setMaxPhiBin(_towerGeom->get_phibins());
+    RTHelper::setMaxEtaBin(_towerGeom->get_etabins());
 
+    /*
     // Make the list of _towers above minimum energy threshold.
-    //vector<RTHelper> seedTowers = _GetSeedTowers();
     set_threshold_energy(0.1);
     std::list<RTHelper> allTowers = _GetAllTowers();
     std::list<RTHelper> seedTowers = IAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
@@ -65,20 +65,16 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
 
     // Cluster the towers. 
     TowerMap clusteredTowers = IAlgorithm::GetClusteredTowers(seedTowers, allTowers);
-    //PHMakeGroups(seedTowers, clusteredTowers);
     
-    /*
     // Fill _clusters (now empty) with the clusteredTowers and calculate their values.
     foreach (TowerPair& ctitr, clusteredTowers) {
         // Store this cluster's id and the associated RawTower.
         int clusterID            = ctitr.first;
         RawTower *clusteredTower = RTHelper::GetRawTower(ctitr.second, _towers);
-
         // If this tower belongs to a cluster we haven't seen yet, then
         // add the new cluster to _clusters and push_back 0.0 for eta, phi, and energy.
         RawCluster *rawCluster = _clusters->getCluster(clusterID); 
         if (!rawCluster) ClusterHelper::NewCluster(rawCluster, _clusters);
-
         // Finally, add the tower to this cluster.
         rawCluster->addTower(clusteredTower->get_id(), clusteredTower->get_energy());
         if (verbosity) _PrintCluster(ctitr);
@@ -95,6 +91,7 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     if (chkenergyconservation) _CheckEnergyConservation();
     */
     return Fun4AllReturnCodes::EVENT_OK;
+
 }
 
 int MyRawClusterBuilder::End(PHCompositeNode *topNode) {
@@ -127,8 +124,8 @@ int MyRawClusterBuilder::_NodeError(string nodeName, int retCode) {
 
 void MyRawClusterBuilder::_PrintCluster(TowerPair ctitr) {
     cout << "MyRawClusterBuilder id: " << (ctitr.first) 
-        << " Tower: " << " (iEta,iPhi) = (" << ctitr.second.get_bineta() 
-        << "," << ctitr.second.get_binphi() << ") " << " (eta,phi,e) = (" 
+        << " Tower: " << " (iEta,iPhi) = (" << ctitr.second.getBinEta() 
+        << "," << ctitr.second.getBinPhi() << ") " << " (eta,phi,e) = (" 
         << ctitr.second.getEtaCenter() << ","
         << ctitr.second.getPhiCenter() << ","
         //<< clusteredTower->get_energy() << ")"
@@ -147,11 +144,11 @@ std::list<RTHelper> MyRawClusterBuilder::_GetAllTowers() {
 // Given iterator to a seed tower, place relevant info into std::vector of seed towers.
 void MyRawClusterBuilder::_InsertTower(std::list<RTHelper>&  vec, RawTowerPair towerPair)  {
     // Store the RTC pair elements separately.
-    RawTowerDefs::keytype seedID      = towerPair.first;
-    RawTower* seedTower = towerPair.second;
+    RawTowerDefs::keytype seedID    = towerPair.first;
+    RawTower* seedTower             = towerPair.second;
     // Wrap RawTower info inside an RTHelper. 
     RTHelper rtHelper(seedTower);
-    rtHelper.set_id(seedID);
+    rtHelper.setID(seedID);
     rtHelper.setCenter(_towerGeom);
     vec.push_back(rtHelper);
 }
