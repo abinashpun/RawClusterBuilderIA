@@ -98,6 +98,7 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
 }
 
 int MyRawClusterBuilder::End(PHCompositeNode *topNode) {
+    _ShowTreeEntries();
     cout << "WRITING TO FILE " << _file->GetName() << endl;
     _file->Write();
     _file->Close();
@@ -282,4 +283,8 @@ void MyRawClusterBuilder::_PrintCluster(TowerPair towerPair) {
         << towerPair.second.getPhiCenter() << ","
         //<< clusteredTower->get_energy() << ")"
         << endl;
+}
+
+void MyRawClusterBuilder::_ShowTreeEntries() {
+    for (int i = 0; i < _tree->GetEntries(); i++) _tree->Show(i);
 }

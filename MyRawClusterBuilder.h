@@ -67,11 +67,6 @@ class MyRawClusterBuilder : public SubsysReco {
         std::vector<float>  _phi;
 
         TFile* _file;
-        /*TTree* _tree;
-        float _f_energy;
-        float _f_eta;
-        float _f_phi;*/
-
         TNtuple* _tree;
 
         int  _NodeError(string nodeName, int retCode);
@@ -86,6 +81,7 @@ class MyRawClusterBuilder : public SubsysReco {
         void _InsertTower(std::list<RTHelper>&, RawTowerPair);
         bool _CorrectPhi(RawCluster*);
         void _CreateNewCluster(RawCluster**);
+        void _ShowTreeEntries();
 };
 
 #endif
