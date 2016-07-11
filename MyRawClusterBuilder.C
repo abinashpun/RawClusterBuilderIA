@@ -65,11 +65,9 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     // Make the list of _towers above minimum energy threshold.
     set_threshold_energy(0.1);
     std::list<RTHelper> seedTowers = IAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
-    cout << "seedTowers.size() = " << seedTowers.size() << endl;
 
     // Cluster the towers. 
     TowerMap clusteredTowers = IAlgorithm::GetClusteredTowers(seedTowers, _towers, _towerGeom);
-    cout << "clusteredTowers.size() = " << clusteredTowers.size() << endl;
     
     // Fill _clusters (now empty) with the clusteredTowers and calculate their values.
     foreach (TowerPair& towerPair, clusteredTowers) {
@@ -81,7 +79,9 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
         if (verbosity) _PrintCluster(towerPair);
     }
 
-    cout << "_clusters->size() is " << _clusters->size() << endl;
+    cout << "seedTowers.size() = "      << seedTowers.size()        << endl;
+    cout << "clusteredTowers.size() = " << clusteredTowers.size()   << endl;
+    cout << "_clusters->size() = "      << _clusters->size()        << endl;
 
     // Calculate/store energy, eta, phi of clusters given clusteredTowers information.
     _FillClustersEnergy(clusteredTowers);
