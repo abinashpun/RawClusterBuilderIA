@@ -79,6 +79,7 @@ class MyRawClusterBuilder : public SubsysReco {
         std::list<RTHelper> _GetAllTowers();
         void _InsertTower(std::list<RTHelper>&, RawTowerPair);
         bool _CorrectPhi(RawCluster*);
+        void _CreateNewCluster(RawCluster*);
 };
 
 #endif

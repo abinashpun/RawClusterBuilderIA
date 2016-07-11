@@ -1,6 +1,5 @@
 #include "MyRawClusterBuilder.h"
 #include "RTHelper.h"
-#include "ClusterHelper.h"
 //#include "PHMakeGroups.h"
 #include "IslandAlgorithm.h"
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
@@ -43,10 +42,8 @@ int MyRawClusterBuilder::InitRun(PHCompositeNode *topNode) {
  * MyRawClusterBuilder::process_event(...)                        *
  * ------------------------------------------------------------ */
 int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
-    namespace IAlgorithm = IslandAlgorithm;
 
-    // Clear any previously used helper objects. 
-    ClusterHelper::NewEvent();
+    namespace IAlgorithm = IslandAlgorithm;
     string nodeName;
 
     // Grab the container of RawTowers (kinematic info).
@@ -65,7 +62,6 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
 
     // Make the list of _towers above minimum energy threshold.
     set_threshold_energy(0.1);
-    std::list<RTHelper> allTowers = _GetAllTowers();
     std::list<RTHelper> seedTowers = IAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
     cout << "seedTowers.size() = " << seedTowers.size() << endl;
 
@@ -74,17 +70,13 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     cout << "clusteredTowers.size() = " << clusteredTowers.size() << endl;
     
     // Fill _clusters (now empty) with the clusteredTowers and calculate their values.
-    foreach (TowerPair& ctitr, clusteredTowers) {
-        // Store this cluster's id and the associated RawTower.
-        int clusterID            = ctitr.first;
-        RawTower *clusteredTower = RTHelper::GetRawTower(ctitr.second, _towers);
-        // If this tower belongs to a cluster we haven't seen yet, then
-        // add the new cluster to _clusters and push_back 0.0 for eta, phi, and energy.
-        RawCluster *rawCluster = _clusters->getCluster(clusterID); 
-        if (!rawCluster) ClusterHelper::NewCluster(rawCluster, _clusters);
-        // Finally, add the tower to this cluster.
-        rawCluster->addTower(clusteredTower->get_id(), clusteredTower->get_energy());
-        if (verbosity) _PrintCluster(ctitr);
+    foreach (TowerPair& towerPair, clusteredTowers) {
+        // Either get the cluster with this ID or create a new one.
+        RawCluster *rawCluster = _clusters->getCluster(towerPair.first); 
+        if (!rawCluster) _CreateNewCluster(rawCluster);
+        // Add the tower to this cluster.
+        rawCluster->addTower(towerPair.second.getID(), towerPair.second.getEnergy());
+        if (verbosity) _PrintCluster(towerPair);
     }
 
     // Calculate/store energy, eta, phi of clusters given clusteredTowers information.
@@ -128,12 +120,12 @@ int MyRawClusterBuilder::_NodeError(string nodeName, int retCode) {
     return retCode;
 }
 
-void MyRawClusterBuilder::_PrintCluster(TowerPair ctitr) {
-    cout << "MyRawClusterBuilder id: " << (ctitr.first) 
-        << " Tower: " << " (iEta,iPhi) = (" << ctitr.second.getBinEta() 
-        << "," << ctitr.second.getBinPhi() << ") " << " (eta,phi,e) = (" 
-        << ctitr.second.getEtaCenter() << ","
-        << ctitr.second.getPhiCenter() << ","
+void MyRawClusterBuilder::_PrintCluster(TowerPair towerPair) {
+    cout << "MyRawClusterBuilder id: " << (towerPair.first) 
+        << " Tower: " << " (iEta,iPhi) = (" << towerPair.second.getBinEta() 
+        << "," << towerPair.second.getBinPhi() << ") " << " (eta,phi,e) = (" 
+        << towerPair.second.getEtaCenter() << ","
+        << towerPair.second.getPhiCenter() << ","
         //<< clusteredTower->get_energy() << ")"
         << endl;
 }
@@ -159,8 +151,8 @@ void MyRawClusterBuilder::_InsertTower(std::list<RTHelper>&  towerList, RawTower
 // 1.
 std::vector<float> MyRawClusterBuilder::_GetClustersEnergy(TowerMap clusteredTowers) {
     std::vector<float> energy;
-    foreach (TowerPair& ctitr, clusteredTowers) {
-        energy[ctitr.first] += RTHelper::GetRawTower(ctitr.second, _towers)->get_energy();
+    foreach (TowerPair& towerPair, clusteredTowers) {
+        energy[towerPair.first] += towerPair.second.getEnergy();
     }
     return energy;
 }
@@ -168,14 +160,11 @@ std::vector<float> MyRawClusterBuilder::_GetClustersEnergy(TowerMap clusteredTow
 // 2.
 std::vector<float> MyRawClusterBuilder::_GetClustersEta(TowerMap clusteredTowers) {
     std::vector<float> eta;
-    foreach (TowerPair& ctitr, clusteredTowers) {
-        RawTower *rawTower  = RTHelper::GetRawTower(ctitr.second, _towers);
-        eta[ctitr.first]   += rawTower->get_energy() * ctitr.second.getEtaCenter();
+    foreach (TowerPair& towerPair, clusteredTowers) {
+        eta[towerPair.first]   += towerPair.second.getEnergy() * towerPair.second.getEtaCenter();
     }
-
-    for (unsigned int i = 0; i < _clusters->size(); i++) {
-        if (_energy[i] > 0) eta[i] /= _energy[i];
-        else                eta[i] = 0.0;
+    for (unsigned i = 0; i < _clusters->size(); i++) {
+        eta[i] = (_energy[i] > 0) ? eta[i] / _energy[i] : 0.0;
     }
     return eta;
 }
@@ -184,18 +173,15 @@ std::vector<float> MyRawClusterBuilder::_GetClustersEta(TowerMap clusteredTowers
 std::vector<float> MyRawClusterBuilder::_GetClustersPhi(TowerMap clusteredTowers) {
     std::vector<float> phi;
     // First, get all constitutent tower phi's as an energy-weighted sum.
-    foreach (TowerPair& ctitr, clusteredTowers) {
-        RawTower *rawTower = RTHelper::GetRawTower(ctitr.second, _towers);
-        phi[ctitr.first] += rawTower->get_energy() * ctitr.second.getPhiCenter();
+    foreach (TowerPair& towerPair, clusteredTowers) {
+        RawTower *rawTower = RTHelper::GetRawTower(towerPair.second, _towers);
+        phi[towerPair.first] += rawTower->get_energy() * towerPair.second.getPhiCenter();
     }
-
     // Then divide by the total cluster energy.
     for (unsigned int i = 0; i < _clusters->size(); i++) {
-        if (_energy[i] > 0)  phi[i] /= _energy[i];
-        else                phi[i] = 0.0;
+        phi[i] = (_energy[i] > 0) ? phi[i] / _energy[i] : 0.0;
         if (phi[i] > M_PI)  phi[i] -= 2. * M_PI;
     }
-
     // Finally, correct the mean Phi calculation for clusters at Phi discontinuity.
     for (unsigned int iCluster = 0; iCluster < _clusters->size(); iCluster++) {
         RawCluster *cluster = _clusters->getCluster(iCluster);
@@ -287,5 +273,13 @@ void MyRawClusterBuilder::_CheckEnergyConservation() {
         cout << "energy conservation violation: ETower: " << etower
              << " ECluster: " << ecluster << endl;
     }
+}
+
+void MyRawClusterBuilder::_CreateNewCluster(RawCluster* rawCluster) {
+    rawCluster = new RawClusterv1();
+    _clusters->AddCluster(rawCluster);
+    _energy.push_back(0.0);
+    _eta.push_back(0.0);
+    _phi.push_back(0.0);
 }
 
