@@ -1,6 +1,7 @@
 # Initial Performance Checks:
 
 * Single Electron:
+
 |                       | Input | Output 1  | Output 2 | Output 3  |
 | --------------------- | ----- | --------- | -------- | --------  |
 | __Energy__            | 20.   | 18.05     | 19.26    | 19.42     |
@@ -8,6 +9,7 @@
 | __Phi__               | 0.0   | -0.01     | -0.01    | -0.01     |
 
 * Single Photon:
+
 |                       | Input | Output 1  | Output 2  | Output 3  |
 | --------------------- | ----- | --------- | --------  | --------  |
 | __Energy__            | 20.   | 17.39     | 15.54     | 17.39     |
