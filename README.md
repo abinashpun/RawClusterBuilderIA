@@ -1,4 +1,5 @@
 # Initial Performance Checks:
+(threshold seed energy set at 0.1 GeV). 
 
 ## __Single Electron__:
 |                       | Input | Output 1  | Output 2 | Output 3  |
