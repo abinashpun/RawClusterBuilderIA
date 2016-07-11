@@ -29,6 +29,13 @@ int MyRawClusterBuilder::InitRun(PHCompositeNode *topNode) {
         cout << PHWHERE << ": " << e.what() << endl;
         throw;
     }
+
+    _file = new TFile("rootFiles/rcb.root","RECREATE"); 
+    _tree = new TTree("tree","Tree of RCB information.");
+
+    _tree->Branch("energy",  &_f_energy);
+    _tree->Branch("eta", &_f_eta);
+    _tree->Branch("phi", &_f_phi);
     return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -56,7 +63,6 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     RTHelper::setMaxPhiBin(_towerGeom->get_phibins());
     RTHelper::setMaxEtaBin(_towerGeom->get_etabins());
 
-    /*
     // Make the list of _towers above minimum energy threshold.
     set_threshold_energy(0.1);
     std::list<RTHelper> allTowers = _GetAllTowers();
@@ -64,7 +70,8 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     cout << "seedTowers.size() = " << seedTowers.size() << endl;
 
     // Cluster the towers. 
-    TowerMap clusteredTowers = IAlgorithm::GetClusteredTowers(seedTowers, allTowers);
+    TowerMap clusteredTowers = IAlgorithm::GetClusteredTowers(seedTowers, _towers, _towerGeom);
+    cout << "clusteredTowers.size() = " << clusteredTowers.size() << endl;
     
     // Fill _clusters (now empty) with the clusteredTowers and calculate their values.
     foreach (TowerPair& ctitr, clusteredTowers) {
@@ -89,7 +96,6 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     }
 
     if (chkenergyconservation) _CheckEnergyConservation();
-    */
     return Fun4AllReturnCodes::EVENT_OK;
 
 }
@@ -132,25 +138,21 @@ void MyRawClusterBuilder::_PrintCluster(TowerPair ctitr) {
         << endl;
 }
 
+// Return list of all RawTower pairs in _towers->getTowers() converted to RTHelpers.
 std::list<RTHelper> MyRawClusterBuilder::_GetAllTowers() {
-    set_threshold_energy(0.4);
-    std::list<RTHelper> seedTowers;
+    std::list<RTHelper> allTowers;
     foreach (RawTowerPair& towerPair, _towers->getTowers()) {
-        _InsertTower(seedTowers, towerPair);
+        // TODO : change order of arguments. 
+        _InsertTower(allTowers, towerPair);
     }
-    return seedTowers;
+    return allTowers;
 }
 
 // Given iterator to a seed tower, place relevant info into std::vector of seed towers.
-void MyRawClusterBuilder::_InsertTower(std::list<RTHelper>&  vec, RawTowerPair towerPair)  {
-    // Store the RTC pair elements separately.
-    RawTowerDefs::keytype seedID    = towerPair.first;
-    RawTower* seedTower             = towerPair.second;
-    // Wrap RawTower info inside an RTHelper. 
-    RTHelper rtHelper(seedTower);
-    rtHelper.setID(seedID);
+void MyRawClusterBuilder::_InsertTower(std::list<RTHelper>&  towerList, RawTowerPair towerPair)  {
+    RTHelper rtHelper(towerPair.second);
     rtHelper.setCenter(_towerGeom);
-    vec.push_back(rtHelper);
+    towerList.push_back(rtHelper);
 }
 
 

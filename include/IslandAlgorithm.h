@@ -38,16 +38,16 @@ namespace IslandAlgorithm {
 
         // Collect all towers above threshold.
         std::list<RTHelper> seedTowers;
-        foreach (RawTowerPair& towerMap, _towers->getTowers()) {
-            if (towerMap.second->get_energy() > _threshold) {
-                RTHelper rtHelper(towerMap.second);
-                rtHelper.setID(towerMap.first);
+        foreach (RawTowerPair& rawTowerPair, _towers->getTowers()) {
+            if (rawTowerPair.second->get_energy() > _threshold) {
+                RTHelper rtHelper(rawTowerPair.second);
+                rtHelper.setID(rawTowerPair.first);
                 rtHelper.setCenter(_towerGeom);
                 seedTowers.push_back(rtHelper);
             }
         }
 
-        // Find towers with higher-energy adjacent towers.
+        // Find towers with higher-energy adjacent towers.(aka bad seeds)
         std::set<RTHelper> badSeeds;
         seedTowers.sort(lessEnergy);
         // Todo: this could _definitely_ be optimized. 
@@ -71,9 +71,14 @@ namespace IslandAlgorithm {
         return seedTowers;
     }
 
+    int moveEta(std::string direction, int& currBinEta);
     int movePhi(std::string direction, int& currBinPhi);
-    void _SearchEast(RTHelper seed, RTContainer* _towers, TowerMap& clusteredTowers, RTGeomContainer* _towerGeom);
-    void _Search(std::string direction, RTHelper seed, RTContainer* _towers, TowerMap& clusteredTowers, RTGeomContainer* _towerGeom);
+    void _SearchEta(std::string direction,       RTHelper           currentTower,
+                    int&        clusterID,       RTContainer*       _towers,    
+                    TowerMap&   clusteredTowers, RTGeomContainer*   _towerGeom);
+    void _SearchPhi(std::string direction,       RTHelper           currentTower,
+                    int&        clusterID,       RTContainer*       _towers,    
+                    TowerMap&   clusteredTowers, RTGeomContainer*   _towerGeom);
     /* ------------------------------------------------------------------------------------------ *
        2.   Starting from the most energetic seed, the algorithm collects crystals belonging to 
             a certain cluster. Moves both directions in phi, collecting all towers until it sees
@@ -84,70 +89,67 @@ namespace IslandAlgorithm {
             cluster and can't be subsequently used to seed another. 
      * ------------------------------------------------------------------------------------------ */
     TowerMap GetClusteredTowers(std::list<RTHelper> seedTowers, 
-                                RTContainer* _towers, 
-                                RTGeomContainer* _towerGeom) {
+                                RTContainer*        _towers, 
+                                RTGeomContainer*    _towerGeom) {
 
-        //int clusterID = 0;
+        int clusterID = 0;
         TowerMap clusteredTowers;
-        /*
         foreach (RTHelper& seed, seedTowers) {
             // Begin by inserting the seed tower, which defines a cluster.
             clusteredTowers.insert(std::make_pair(clusterID, seed));
-            _Search("north", seed, _towers, clusteredTowers, _towerGeom);
-            _Search("south", seed, _towers, clusteredTowers, _towerGeom);
-            _SearchEast(seed, _towers, clusteredTowers, _towerGeom);
-            _SearchWest(seed, _towers, clusteredTowers, _towerGeom);
+            _SearchPhi("north", seed, clusterID, _towers, clusteredTowers, _towerGeom);
+            _SearchPhi("south", seed, clusterID, _towers, clusteredTowers, _towerGeom);
+            _SearchEta("west", seed, clusterID, _towers, clusteredTowers, _towerGeom);
+            _SearchEta("east", seed, clusterID, _towers, clusteredTowers, _towerGeom);
             clusterID++;
         }
-        */
         return clusteredTowers;
     }
 
+    /* -------------------------------------------------------------------------
+       _SearchPhi
+       ------------------------------------------------------------------------- */
+    void _SearchPhi(std::string direction,       RTHelper           currentTower,
+                    int&        clusterID,       RTContainer*       _towers,    
+                    TowerMap&   clusteredTowers, RTGeomContainer*   _towerGeom) {
 
-    void _SearchEast(RTHelper seed, RTContainer* _towers, TowerMap& clusteredTowers, RTGeomContainer* _towerGeom) {
-        /*
-        // Get next tower info to decide if we should add it.
-        int currBinEta = seed.getBinEta();
-        if (currBinEta != RTHelper::getMaxEtaBin()) {
-            int nextBinEta = currBinEta++;
-            RawTower* nextTower = _towers->getTower(nextBinEta, currBinPhi);
-            if (nextTower) {
-                RTHelper rtHelper(nextTower);
-                rtHelper.setCenter(_towerGeom);
-                _Search("north", rtHelper, _towers, clusteredTowers, _towerGeom);
-                _Search("south", rtHelper, _towers, clusteredTowers, _towerGeom);
-                _SearchEast(rtHelper, _towers, clusteredTowers, _towerGeom);
-            } else {
-                return;
-            }
-        }
-        */
-    }
+        // Get current tower info.
+        float currEnergy = currentTower.getEnergy();
+        int currBinPhi   = currentTower.getBinPhi();
+        int currBinEta   = currentTower.getBinEta();
 
-    void _Search(std::string direction, RTHelper seed, RTContainer* _towers, TowerMap& clusteredTowers, RTGeomContainer* _towerGeom) {
-        /*
-         // Get current tower info.
-        float currentEnergy = seed.getEnergy();
-        int currBinPhi = seed.getBinPhi();
-        int currBinEta = seed.getBinEta();
         // Get next tower info to decide if we should add it.
-        int nextBinPhi = (currBinPhi != RTHelper::getMaxPhiBin()) ? currBinPhi++ : 1;
-        RawTower* nextTower = _towers->getTower(currBinEta, nextBinPhi);
-        if (!nextTower) return;
-        float nextEnergy = nextTower->getEnergy();
+        RawTower* nextTower = _towers->getTower(currBinEta, movePhi(direction, currBinPhi));
         // Keep doing this until energy increase or hole.
-        while (currentEnergy > nextEnergy) {
-            // Add the nextTower to cluster.
+        if (nextTower && currEnergy > nextTower->get_energy()) {
             RTHelper rtHelper(nextTower);
             rtHelper.setCenter(_towerGeom);
             clusteredTowers.insert(std::make_pair(clusterID, rtHelper));
-            // Setup to check the tower after that.
-            nextTower = _towers->getTower(currBinEta, movePhi(direction, nextBinPhi));
-            if (!nextTower) return;
-            currentEnergy = nextEnergy;
-            nextEnergy = nextTower->getEnergy();
+            _SearchPhi(direction, rtHelper, clusterID, _towers, clusteredTowers, _towerGeom);
         }
-        */
+    }
+
+    /* -------------------------------------------------------------------------
+       _SearchEta
+       ------------------------------------------------------------------------- */
+    void _SearchEta(std::string direction,       RTHelper           currentTower,
+                    int&        clusterID,       RTContainer*       _towers,    
+                    TowerMap&   clusteredTowers, RTGeomContainer*   _towerGeom) {
+        // Get next tower info to decide if we should add it.
+        int currBinEta = currentTower.getBinEta();
+        int currBinPhi = currentTower.getBinPhi();
+        float currEnergy = currentTower.getEnergy();
+        if (moveEta(direction, currBinEta) != -1) {
+            RawTower* nextTower = _towers->getTower(currBinEta, currBinPhi);
+            if (nextTower && currEnergy > nextTower->get_energy()) {
+                RTHelper rtHelper(nextTower);
+                rtHelper.setCenter(_towerGeom);
+                clusteredTowers.insert(std::make_pair(clusterID, rtHelper));
+                _SearchPhi("north", rtHelper, clusterID, _towers, clusteredTowers, _towerGeom);
+                _SearchPhi("south", rtHelper, clusterID, _towers, clusteredTowers, _towerGeom);
+                _SearchEta(direction, rtHelper, clusterID, _towers, clusteredTowers, _towerGeom);
+            }
+        }
     }
 
     int movePhi(std::string direction, int& currBinPhi) { 
@@ -155,9 +157,13 @@ namespace IslandAlgorithm {
         else if (direction == "south") currBinPhi = (currBinPhi != 1) ? currBinPhi-- :
             RTHelper::getMaxPhiBin();
         return currBinPhi;
-
     }
 
+    int moveEta(std::string direction, int& currBinEta) { 
+        if (direction == "west") currBinEta = (currBinEta != 1) ? currBinEta-- : -1;
+        else if (direction == "east") currBinEta = (currBinEta != RTHelper::getMaxEtaBin()) ? currBinEta++ : -1;
+        return currBinEta;
+    }
 
     // A simple comparator that orders RTHelpers in order of INCREASING energy.
     bool lessEnergy(RTHelper tower1, RTHelper tower2) { 

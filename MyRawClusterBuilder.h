@@ -18,6 +18,9 @@
 #include "g4cemc/RawTowerContainer.h"
 #include "include/RawClusterv1.h"
 #include "g4cemc/RawClusterContainer.h"
+// ROOT Includes.
+#include "TFile.h"
+#include "TTree.h"
 
 using std::cout;
 using std::endl;
@@ -59,6 +62,12 @@ class MyRawClusterBuilder : public SubsysReco {
         std::vector<float>  _eta; 
         std::vector<float>  _phi;
 
+        TTree* _tree;
+        TFile* _file;
+        float _f_energy;
+        float _f_eta;
+        float _f_phi;
+
         int  _NodeError(string nodeName, int retCode);
         void _AssignClusterValues(int iCluster);
         void _CreateNodes(PHCompositeNode *topNode);
@@ -72,4 +81,4 @@ class MyRawClusterBuilder : public SubsysReco {
         bool _CorrectPhi(RawCluster*);
 };
 
-#endif 
+#endif

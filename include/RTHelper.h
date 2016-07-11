@@ -48,17 +48,9 @@ void RTHelper::setCenter(RawTowerGeomContainer* towerGeom) {
     phiCenter = towerGeom->get_phicenter(binphi);
 }
 
-RawTower* RTHelper::GetRawTower(RTHelper towerHelper, RawTowerContainer* towers) {
-    int iPhi = towerHelper.getBinPhi();
-    int iEta = towerHelper.getBinEta();
-
-    // Ensure ids match. TODO: not really sure what this means?
-    int eid = (int) RawTowerDefs::encode_towerid(towers->getCalorimeterID(), iEta, iPhi);
-    if (towerHelper.getID() != eid) ExitOnIDMismatch(towerHelper.getID(), eid);
-
-    return towers->getTower(iEta, iPhi);
-}
-
+/* ----------------------------------------
+   RTHelper(RawTower*) constructor.
+   ---------------------------------------- */
 RTHelper::RTHelper(RawTower *rt) : id(-1) {
     bineta = rt->get_bineta();
     binphi = rt->get_binphi();
@@ -90,6 +82,16 @@ bool operator<(const RTHelper& a, const RTHelper& b) {
 bool operator==(const RTHelper& a, const RTHelper& b) {
     return a.getID() == b.getID();
 }
+
+RawTower* RTHelper::GetRawTower(RTHelper towerHelper, RawTowerContainer* towers) {
+    int iPhi = towerHelper.getBinPhi();
+    int iEta = towerHelper.getBinEta();
+    // Ensure ids match. TODO: not really sure what this means?
+    int eid = (int) RawTowerDefs::encode_towerid(towers->getCalorimeterID(), iEta, iPhi);
+    if (towerHelper.getID() != eid) ExitOnIDMismatch(towerHelper.getID(), eid);
+    return towers->getTower(iEta, iPhi);
+}
+
 void RTHelper::ExitOnIDMismatch(int id1, int id2) {
     cout <<__PRETTY_FUNCTION__
          << " - Fatal Error - id mismatch. internal: " 
