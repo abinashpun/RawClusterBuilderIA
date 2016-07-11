@@ -51,7 +51,7 @@ namespace IslandAlgorithm {
        1.   The island algorithm starts by a search for seeds. Seeds are defined as                
             crystals with an energy above a certain threshold on transverse energy.                
      * ------------------------------------------------------------------------------------------ */
-    std::list<RTHelper> GetSeedTowers(RTContainer* _towers, RTGeomContainer* _towerGeom, float _threshold=0.) {
+    std::list<RTHelper> GetSeedTowers(RTContainer* _towers, RTGeomContainer* _towerGeom, float _threshold) {
 
         // Collect all towers above threshold.
         std::list<RTHelper> seedTowers;

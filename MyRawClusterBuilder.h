@@ -21,10 +21,13 @@
 // ROOT Includes.
 #include "TFile.h"
 #include "TTree.h"
+#include "TNtuple.h"
 
 using std::cout;
 using std::endl;
 using std::string;
+
+const string PATH = "/phenix/u/bmckinz/sphenix_src/";
 
 // Forward class declarations.
 class PHCompositeNode;
@@ -45,7 +48,8 @@ class MyRawClusterBuilder : public SubsysReco {
     public:
         MyRawClusterBuilder(const std::string& name = "MyRawClusterBuilder"); 
         virtual ~MyRawClusterBuilder() {}
-        int InitRun(PHCompositeNode *topNode);
+        //int InitRun(PHCompositeNode *topNode);
+        int Init(PHCompositeNode *topNode);
         int process_event(PHCompositeNode *topNode);
         int End(PHCompositeNode *topNode);
         void Detector(const string &d)              { detector = d; }
@@ -62,24 +66,26 @@ class MyRawClusterBuilder : public SubsysReco {
         std::vector<float>  _eta; 
         std::vector<float>  _phi;
 
-        TTree* _tree;
         TFile* _file;
+        /*TTree* _tree;
         float _f_energy;
         float _f_eta;
-        float _f_phi;
+        float _f_phi;*/
+
+        TNtuple* _tree;
 
         int  _NodeError(string nodeName, int retCode);
         void _AssignClusterValues(int iCluster);
         void _CreateNodes(PHCompositeNode *topNode);
         void _PrintCluster(TowerPair);
         void _CheckEnergyConservation();
-        std::vector<float> _GetClustersEnergy(TowerMap);
-        std::vector<float> _GetClustersEta(TowerMap);
-        std::vector<float> _GetClustersPhi(TowerMap);
+        void _FillClustersEnergy(TowerMap);
+        void _FillClustersEta(TowerMap);
+        void _FillClustersPhi(TowerMap);
         std::list<RTHelper> _GetAllTowers();
         void _InsertTower(std::list<RTHelper>&, RawTowerPair);
         bool _CorrectPhi(RawCluster*);
-        void _CreateNewCluster(RawCluster*);
+        void _CreateNewCluster(RawCluster**);
 };
 
 #endif
