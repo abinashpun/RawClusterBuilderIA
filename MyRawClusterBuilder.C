@@ -13,32 +13,29 @@
  * -------------------------------------------------------- */
 MyRawClusterBuilder::MyRawClusterBuilder(const string& name)
     : SubsysReco(name),
-      _clusters(NULL),
-      _min_tower_e(0.0),
-      chkenergyconservation(0),
-      detector("NONE") {}
+    _clusters(NULL),
+    _min_tower_e(0.0),
+    chkenergyconservation(0),
+    detector("NONE") {}
 
-/* ----------------------------------------------------- *
- * MyRawClusterBuilder::InitRun()                          *
- * ----------------------------------------------------- */
-int MyRawClusterBuilder::Init/*Run*/(PHCompositeNode *topNode) {
-    try {
-        _CreateNodes(topNode);
-    } catch (std::exception &e) {
-        cout << PHWHERE << ": " << e.what() << endl;
-        throw;
+    /* ----------------------------------------------------- *
+     * MyRawClusterBuilder::InitRun()                          *
+     * ----------------------------------------------------- */
+    int MyRawClusterBuilder::Init/*Run*/(PHCompositeNode *topNode) {
+        try {
+            _CreateNodes(topNode);
+        } catch (std::exception &e) {
+            cout << PHWHERE << ": " << e.what() << endl;
+            throw;
+        }
+
+        const string fileName = PATH + "rootFiles/rcb.root";
+        _file = new TFile(fileName.c_str(),"RECREATE"); 
+        _ntp_cluster    = new TNtuple("ntp_cluster", "cluster values", "energy:eta:phi:ntowers");
+        _ntp_tower      = new TNtuple("ntp_tower", "tower values", "energy:eta:phi:ieta:iphi");
+
+        return Fun4AllReturnCodes::EVENT_OK;
     }
-
-    const string fileName = PATH + "rootFiles/rcb.root";
-    _file = new TFile(fileName.c_str(),"RECREATE"); 
-    /*_tree = new TTree("tree","Tree of RCB information.");
-    _tree->Branch("energy",  &_f_energy);
-    _tree->Branch("eta", &_f_eta);
-    _tree->Branch("phi", &_f_phi);*/
-
-    _tree = new TNtuple("tree", "cluster values", "energy:eta:phi");
-    return Fun4AllReturnCodes::EVENT_OK;
-}
 
 /* ------------------------------------------------------------ *
  * MyRawClusterBuilder::process_event(...)                        *
@@ -47,6 +44,9 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
 
     namespace IAlgorithm = IslandAlgorithm;
     string nodeName;
+    _energy.clear();
+    _eta.clear();
+    _phi.clear();
 
     // Grab the container of RawTowers (kinematic info).
     nodeName = "TOWER_CALIB_" + detector;
@@ -57,7 +57,7 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     nodeName    = "TOWERGEOM_" + detector;
     _towerGeom  = findNode::getClass<RTGeomContainer>(topNode, nodeName.c_str());
     if (!_towerGeom) return _NodeError(nodeName, Fun4AllReturnCodes::ABORTEVENT);
-    
+
     // Store the number of bins in phi as a static value, as it should be. 
     RTHelper::setMaxPhiBin(_towerGeom->get_phibins());
     RTHelper::setMaxEtaBin(_towerGeom->get_etabins());
@@ -68,11 +68,11 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
 
     // Cluster the towers. 
     TowerMap clusteredTowers = IAlgorithm::GetClusteredTowers(seedTowers, _towers, _towerGeom);
-    
+
     // Fill _clusters (now empty) with the clusteredTowers and calculate their values.
     foreach (TowerPair& towerPair, clusteredTowers) {
         // Either get the cluster with this ID or create a new one.
-        RawCluster *rawCluster = _clusters->getCluster(towerPair.first); 
+        RawCluster* rawCluster = _clusters->getCluster(towerPair.first); 
         if (!rawCluster) _CreateNewCluster(&rawCluster);
         // Add the tower to this cluster.
         rawCluster->addTower(towerPair.second.getID(), towerPair.second.getEnergy());
@@ -89,8 +89,11 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     _FillClustersPhi(clusteredTowers);
     for (unsigned i = 0; i < _clusters->size(); i++) {
         _AssignClusterValues(i);
-        _tree->Fill(_energy[i], _eta[i], _phi[i]);
     }
+
+    // Handle ROOT I/O. 
+    _FillTowerTree(_GetAllTowers());
+    _FillClusterTree();
 
     if (chkenergyconservation) _CheckEnergyConservation();
     return Fun4AllReturnCodes::EVENT_OK;
@@ -116,9 +119,9 @@ void MyRawClusterBuilder::_AssignClusterValues(int iCluster) {
     cluster->set_phi(_phi[iCluster]);
     if (verbosity) {
         cout << " (eta,phi,e) = (" << cluster->get_eta() << ", "
-             << cluster->get_phi() << ","
-             << cluster->get_energy() << ")"
-             << endl;
+            << cluster->get_phi() << ","
+            << cluster->get_energy() << ")"
+            << endl;
     }
 }
 
@@ -175,7 +178,7 @@ void MyRawClusterBuilder::_FillClustersPhi(TowerMap clusteredTowers) {
         bool corr           = _CorrectPhi(cluster);
         if (corr) {
             cout << PHWHERE << " Cluster Phi corrected: " 
-                 << oldPhi  << " " << cluster->get_phi() << endl;
+                << oldPhi  << " " << cluster->get_phi() << endl;
         }
     }
 }
@@ -252,11 +255,11 @@ void MyRawClusterBuilder::_CheckEnergyConservation() {
     double etower   = _towers->getTotalEdep();
     if (ecluster > 0 && (fabs(etower - ecluster) / ecluster) > 1e-9) {
         cout << "energy conservation violation: ETower: " << etower
-             << " ECluster: " << ecluster 
-             << " diff: " << etower - ecluster << endl;
+            << " ECluster: " << ecluster 
+            << " diff: " << etower - ecluster << endl;
     } else if (etower != 0) {
         cout << "energy conservation violation: ETower: " << etower
-             << " ECluster: " << ecluster << endl;
+            << " ECluster: " << ecluster << endl;
     }
 }
 
@@ -271,7 +274,7 @@ void MyRawClusterBuilder::_CreateNewCluster(RawCluster** rawCluster) {
 // Serves to make ugly code in process_event less ugly.
 int MyRawClusterBuilder::_NodeError(string nodeName, int retCode) {
     cout << PHWHERE << ": Could not find node " 
-         << nodeName.data() << endl;
+        << nodeName.data() << endl;
     return retCode;
 }
 
@@ -286,5 +289,26 @@ void MyRawClusterBuilder::_PrintCluster(TowerPair towerPair) {
 }
 
 void MyRawClusterBuilder::_ShowTreeEntries() {
-    for (int i = 0; i < _tree->GetEntries(); i++) _tree->Show(i);
+    for (int i = 0; i < _ntp_cluster->GetEntries(); i++) {
+        _ntp_cluster->Show(i);
+    } 
+}
+
+void MyRawClusterBuilder::_FillTowerTree(std::list<RTHelper> allTowers) {
+    foreach (RTHelper& tower, allTowers) {
+        _ntp_tower->Fill(tower.getEnergy(), 
+                tower.getEtaCenter(), 
+                tower.getPhiCenter(), 
+                tower.getBinEta(), 
+                tower.getBinPhi());
+    }
+}
+
+void MyRawClusterBuilder::_FillClusterTree() {
+    for (unsigned i = 0; i < _clusters->size(); i++) {
+        _ntp_cluster->Fill(_energy[i], 
+                _eta[i], 
+                _phi[i], 
+                _clusters->getCluster(i)->getNTowers());
+    }
 }

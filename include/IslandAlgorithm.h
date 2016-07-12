@@ -26,7 +26,8 @@ namespace IslandAlgorithm {
 
     // The two main workhorse functions of the island algorithm. 
     std::list<RTHelper> GetSeedTowers(RTContainer* _towers, RTGeomContainer* _towerGeom, float _threshold=0.);
-    TowerMap            GetClusteredTowers(std::list<RTHelper> seedTowers, RTContainer* _towers, RTGeomContainer* _towerGeom);
+    TowerMap GetClusteredTowers(std::list<RTHelper> seedTowers, RTContainer* _towers, RTGeomContainer* _towerGeom);
+    void _PrintTowerMsg(RTHelper tower, int index, const char* phiOrEta);
 
     // Collect towers in specified phi/eta direction for specified cluster.
     void _SearchPhi(std::string direction,       RTHelper           currentTower,
@@ -106,6 +107,7 @@ namespace IslandAlgorithm {
         foreach (RTHelper& seed, seedTowers) {
             // Begin by inserting the seed tower, which defines a cluster.
             clusteredTowers.insert(std::make_pair(clusterID, seed));
+            _PrintTowerMsg(seed, clusteredTowers.size(), "SEED");
             _SearchPhi("north", seed, clusterID, _towers, clusteredTowers, _towerGeom);
             _SearchPhi("south", seed, clusterID, _towers, clusteredTowers, _towerGeom);
             _SearchEta("west", seed, clusterID, _towers, clusteredTowers, _towerGeom);
@@ -132,25 +134,14 @@ namespace IslandAlgorithm {
 
         // Keep doing this until energy increase or hole.
         if (nextTower && currEnergy > nextTower->get_energy()) {
-
-            cout << "----- Success in PHI search " << direction 
-                 << " with clusterID = " << clusterID 
-                 << " ----- " << endl;
-
             RTHelper rtHelper(nextTower);
             rtHelper.setCenter(_towerGeom);
             clusteredTowers.insert(std::make_pair(clusterID, rtHelper));
-
-            cout << clusteredTowers.size() << ". " 
-                 << "Inserted towerID "  << rtHelper.getID()     << endl
-                 << "\tEnergy="       << rtHelper.getEnergy() << "; "
-                 << "BinEta="           << rtHelper.getBinEta() << "; "
-                 << "BinPhi="           << rtHelper.getBinPhi() 
-                 << endl;
-
+            _PrintTowerMsg(rtHelper, clusteredTowers.size(), "PHI");
             _SearchPhi(direction, rtHelper, clusterID, _towers, clusteredTowers, _towerGeom);
         }
     }
+
 
     /* -------------------------------------------------------------------------
        _SearchEta
@@ -158,10 +149,6 @@ namespace IslandAlgorithm {
     void _SearchEta(std::string direction,       RTHelper           currentTower,
                     int&        clusterID,       RTContainer*       _towers,    
                     TowerMap&   clusteredTowers, RTGeomContainer*   _towerGeom) {
-
-        cout << "\n__________ ETA search " << direction 
-             << " with clusterID = " << clusterID 
-             << " __________ " << endl;
 
         // Get next tower info to decide if we should add it.
         int currBinEta   = currentTower.getBinEta();
@@ -174,14 +161,7 @@ namespace IslandAlgorithm {
                 RTHelper rtHelper(nextTower);
                 rtHelper.setCenter(_towerGeom);
                 clusteredTowers.insert(std::make_pair(clusterID, rtHelper));
-
-                cout << clusteredTowers.size() << ". " 
-                     << "Inserted towerID "  << rtHelper.getID()     << endl
-                     << "\tEnergy="       << rtHelper.getEnergy() << "; "
-                     << "BinEta="           << rtHelper.getBinEta() << "; "
-                     << "BinPhi="           << rtHelper.getBinPhi() 
-                     << endl;
-
+                _PrintTowerMsg(rtHelper, clusteredTowers.size(), "ETA");
                 _SearchPhi("north", rtHelper, clusterID, _towers, clusteredTowers, _towerGeom);
                 _SearchPhi("south", rtHelper, clusterID, _towers, clusteredTowers, _towerGeom);
                 _SearchEta(direction, rtHelper, clusterID, _towers, clusteredTowers, _towerGeom);
@@ -221,6 +201,15 @@ namespace IslandAlgorithm {
                  << seed.getPhiCenter() << ")" 
                  << endl;
         }
+    }
+
+    void _PrintTowerMsg(RTHelper tower, int index, const char* phiOrEta) {
+        cout << index << ". [" << phiOrEta << "] "
+             << "Inserted towerID "  << tower.getID()     << endl
+             << "\tEnergy="       << tower.getEnergy() << "; "
+             << "BinEta="           << tower.getBinEta() << "; "
+             << "BinPhi="           << tower.getBinPhi() 
+             << endl;
     }
 
 }
