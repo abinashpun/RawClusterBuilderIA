@@ -29,10 +29,14 @@ MyRawClusterBuilder::MyRawClusterBuilder(const string& name)
             throw;
         }
 
-        const string fileName = PATH + "rootFiles/rcb.root";
+        const string fileName = PATH + Form("rootFiles/rcb_%s_%dGeV.root", "EMinus", (int) GEN_ENERGY);
         _file = new TFile(fileName.c_str(),"RECREATE"); 
-        _ntp_cluster    = new TNtuple("ntp_cluster", "cluster values", "energy:eta:phi:ntowers");
-        _ntp_tower      = new TNtuple("ntp_tower", "tower values", "energy:eta:phi:ieta:iphi");
+        
+        string varList  = "genEnergy:recoEnergy:eta:phi:nTowers";
+        ntp_cluster     = new TNtuple("ntp_cluster", "cluster values", varList.data());
+
+        varList         = "energy:eta:phi:ieta:iphi";
+        ntp_tower       = new TNtuple("ntp_tower", "tower values", varList.data());
 
         return Fun4AllReturnCodes::EVENT_OK;
     }
@@ -284,19 +288,20 @@ void MyRawClusterBuilder::_PrintCluster(TowerPair towerPair) {
         << "," << towerPair.second.getBinPhi() << ") " << " (eta,phi,e) = (" 
         << towerPair.second.getEtaCenter() << ","
         << towerPair.second.getPhiCenter() << ","
-        //<< clusteredTower->get_energy() << ")"
+        << towerPair.second.getEnergy() << ")"
         << endl;
 }
 
 void MyRawClusterBuilder::_ShowTreeEntries() {
-    for (int i = 0; i < _ntp_cluster->GetEntries(); i++) {
-        _ntp_cluster->Show(i);
+    for (int i = 0; i < ntp_cluster->GetEntries(); i++) {
+        ntp_cluster->Show(i);
     } 
 }
 
 void MyRawClusterBuilder::_FillTowerTree(std::list<RTHelper> allTowers) {
     foreach (RTHelper& tower, allTowers) {
-        _ntp_tower->Fill(tower.getEnergy(), 
+        ntp_tower->Fill(
+                tower.getEnergy(), 
                 tower.getEtaCenter(), 
                 tower.getPhiCenter(), 
                 tower.getBinEta(), 
@@ -306,9 +311,12 @@ void MyRawClusterBuilder::_FillTowerTree(std::list<RTHelper> allTowers) {
 
 void MyRawClusterBuilder::_FillClusterTree() {
     for (unsigned i = 0; i < _clusters->size(); i++) {
-        _ntp_cluster->Fill(_energy[i], 
+        ntp_cluster->Fill( 
+                GEN_ENERGY,
+                _energy[i], 
                 _eta[i], 
                 _phi[i], 
-                _clusters->getCluster(i)->getNTowers());
+                _clusters->getCluster(i)->getNTowers()
+                );
     }
 }

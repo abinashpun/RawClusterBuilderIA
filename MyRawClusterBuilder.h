@@ -27,6 +27,7 @@ using std::cout;
 using std::endl;
 using std::string;
 
+const float GEN_ENERGY = 20.0; // TODO: change when know how to get gen info. 
 const string PATH = "/phenix/u/bmckinz/sphenix_src/";
 
 // Forward class declarations.
@@ -43,6 +44,7 @@ typedef RawTowerGeomContainer                    RTGeomContainer;
 typedef std::multimap<int, RTHelper>             TowerMap;
 typedef std::pair<const int, RTHelper>           TowerPair;
 typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
+
 
 class MyRawClusterBuilder : public SubsysReco {
     public:
@@ -66,9 +68,10 @@ class MyRawClusterBuilder : public SubsysReco {
         std::vector<float>  _eta; 
         std::vector<float>  _phi;
 
+        // ROOT I/O Objects. 
         TFile* _file;
-        TNtuple* _ntp_cluster;
-        TNtuple* _ntp_tower;
+        TNtuple* ntp_cluster;
+        TNtuple* ntp_tower;
 
         int  _NodeError(string nodeName, int retCode);
         void _AssignClusterValues(int iCluster);
