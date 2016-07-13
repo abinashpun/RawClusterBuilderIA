@@ -42,5 +42,5 @@
 * Try sample of photons, sample of truth particles nearby. 
     + truth level
 * Keep talking about obtaining samples, pi0 sample, etc.
-* Something about ganging (?) the towers 2x2 and then you cluster. 
-
+* Something about ganging (?) the towers 2x2 and then you cluster.
+    + take 2x2 towers and group them first. 
