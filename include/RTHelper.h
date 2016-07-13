@@ -8,6 +8,7 @@
 #include "g4cemc/RawTowerGeomContainer.h"
 #include "g4cemc/RawTowerContainer.h"
 
+
 class RTHelper {
     public:
         RTHelper(RawTower *);
@@ -20,6 +21,7 @@ class RTHelper {
         int getBinEta() const                   { return bineta; }
         int getBinPhi() const                   { return binphi; }
         float getEnergy() const                 { return energy; }
+        float getET() const                     {return energy / std::cosh(etaCenter);}
         void setEtaCenter(float eta)            { etaCenter = eta; }
         void setPhiCenter(float phi)            { phiCenter = phi; }
         float getEtaCenter() const              { return etaCenter; }
@@ -58,13 +60,14 @@ RTHelper::RTHelper(RawTower *rt) : id(-1) {
     id = rt->get_id();
 }
 
+
 // note: true for diagonally adjacent
 bool RTHelper::isAdjacent(RTHelper &tower) {
     if (bineta - 1 <= tower.getBinEta() && tower.getBinEta()<=bineta+1) {
         if(binphi-1<=tower.getBinPhi() && tower.getBinPhi()<=binphi+1) {
             return true;
         } else if(((tower.getBinPhi() == maxPhiBin-1) && (binphi == 0)) || 
-                  ((tower.getBinPhi() == 0) && (binphi == maxPhiBin-1))) {
+                ((tower.getBinPhi() == 0) && (binphi == maxPhiBin-1))) {
             return true;
         }
     }
@@ -94,11 +97,11 @@ RawTower* RTHelper::GetRawTower(RTHelper towerHelper, RawTowerContainer* towers)
 
 void RTHelper::ExitOnIDMismatch(int id1, int id2) {
     cout <<__PRETTY_FUNCTION__
-         << " - Fatal Error - id mismatch. internal: " 
-         << id1
-         << ", towercontainer: " 
-         << id2
-         << endl;
+        << " - Fatal Error - id mismatch. internal: " 
+        << id1
+        << ", towercontainer: " 
+        << id2
+        << endl;
     exit(1);
 }
 

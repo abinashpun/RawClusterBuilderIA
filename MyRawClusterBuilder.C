@@ -1,6 +1,5 @@
 #include "MyRawClusterBuilder.h"
 #include "RTHelper.h"
-//#include "PHMakeGroups.h"
 #include "IslandAlgorithm.h"
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
 #include <boost/foreach.hpp>
@@ -29,13 +28,13 @@ MyRawClusterBuilder::MyRawClusterBuilder(const string& name)
             throw;
         }
 
-        const string fileName = PATH + Form("rootFiles/rcb_%s_%dGeV.root", "EMinus", (int) GEN_ENERGY);
+        const string fileName = PATH + Form("rootFiles/rcb_%s_%dGeV.root", "Gamma", (int) GEN_ENERGY);
         _file = new TFile(fileName.c_str(),"RECREATE"); 
         
-        string varList  = "genEnergy:recoEnergy:eta:phi:nTowers";
+        string varList  = "genPT:recoEnergy:recoET:eta:phi:nTowers";
         ntp_cluster     = new TNtuple("ntp_cluster", "cluster values", varList.data());
 
-        varList         = "energy:eta:phi:ieta:iphi";
+        varList         = "energy:ET:eta:phi:ieta:iphi";
         ntp_tower       = new TNtuple("ntp_tower", "tower values", varList.data());
 
         return Fun4AllReturnCodes::EVENT_OK;
@@ -49,6 +48,7 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     namespace IAlgorithm = IslandAlgorithm;
     string nodeName;
     _energy.clear();
+    _ET.clear();
     _eta.clear();
     _phi.clear();
 
@@ -118,7 +118,7 @@ int MyRawClusterBuilder::End(PHCompositeNode *topNode) {
 
 void MyRawClusterBuilder::_AssignClusterValues(int iCluster) {
     RawCluster* cluster = _clusters->getCluster(iCluster);
-    cluster->set_energy(_energy[iCluster]);
+    cluster->set_energy(_ET[iCluster]);
     cluster->set_eta(_eta[iCluster]);
     cluster->set_phi(_phi[iCluster]);
     if (verbosity) {
@@ -151,16 +151,17 @@ void MyRawClusterBuilder::_InsertTower(std::list<RTHelper>&  towerList, RawTower
 void MyRawClusterBuilder::_FillClustersEnergy(TowerMap clusteredTowers) {
     foreach (TowerPair& towerPair, clusteredTowers) {
         _energy[towerPair.first] += towerPair.second.getEnergy();
+        _ET[towerPair.first] += towerPair.second.getET();
     }
 }
 
 // 2.
 void MyRawClusterBuilder::_FillClustersEta(TowerMap clusteredTowers) {
     foreach (TowerPair& towerPair, clusteredTowers) {
-        _eta[towerPair.first]   += towerPair.second.getEnergy() * towerPair.second.getEtaCenter();
+        _eta[towerPair.first]   += towerPair.second.getET() * towerPair.second.getEtaCenter();
     }
     for (unsigned i = 0; i < _clusters->size(); i++) {
-        _eta[i] = (_energy[i] > 0) ? _eta[i] / _energy[i] : 0.0;
+        _eta[i] = (_ET[i] > 0) ? _eta[i] / _ET[i] : 0.0;
     }
 }
 
@@ -168,11 +169,11 @@ void MyRawClusterBuilder::_FillClustersEta(TowerMap clusteredTowers) {
 void MyRawClusterBuilder::_FillClustersPhi(TowerMap clusteredTowers) {
     // First, get all constitutent tower phi's as an energy-weighted sum.
     foreach (TowerPair& towerPair, clusteredTowers) {
-        _phi[towerPair.first] += towerPair.second.getEnergy() * towerPair.second.getPhiCenter();
+        _phi[towerPair.first] += towerPair.second.getET() * towerPair.second.getPhiCenter();
     }
     // Then divide by the total cluster energy.
     for (unsigned int i = 0; i < _clusters->size(); i++) {
-        _phi[i] = (_energy[i] > 0) ? _phi[i] / _energy[i] : 0.0;
+        _phi[i] = (_ET[i] > 0) ? _phi[i] / _ET[i] : 0.0;
         if (_phi[i] > M_PI)  _phi[i] -= 2. * M_PI;
     }
     // Finally, correct the mean Phi calculation for clusters at Phi discontinuity.
@@ -270,6 +271,7 @@ void MyRawClusterBuilder::_CheckEnergyConservation() {
 void MyRawClusterBuilder::_CreateNewCluster(RawCluster** rawCluster) {
     *rawCluster = new RawClusterv1();
     _clusters->AddCluster(*rawCluster);
+    _ET.push_back(0.0);
     _energy.push_back(0.0);
     _eta.push_back(0.0);
     _phi.push_back(0.0);
@@ -302,6 +304,7 @@ void MyRawClusterBuilder::_FillTowerTree(std::list<RTHelper> allTowers) {
     foreach (RTHelper& tower, allTowers) {
         ntp_tower->Fill(
                 tower.getEnergy(), 
+                tower.getET(),
                 tower.getEtaCenter(), 
                 tower.getPhiCenter(), 
                 tower.getBinEta(), 
@@ -314,6 +317,7 @@ void MyRawClusterBuilder::_FillClusterTree() {
         ntp_cluster->Fill( 
                 GEN_ENERGY,
                 _energy[i], 
+                _ET[i], 
                 _eta[i], 
                 _phi[i], 
                 _clusters->getCluster(i)->getNTowers()

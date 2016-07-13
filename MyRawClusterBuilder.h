@@ -50,7 +50,6 @@ class MyRawClusterBuilder : public SubsysReco {
     public:
         MyRawClusterBuilder(const std::string& name = "MyRawClusterBuilder"); 
         virtual ~MyRawClusterBuilder() {}
-        //int InitRun(PHCompositeNode *topNode);
         int Init(PHCompositeNode *topNode);
         int process_event(PHCompositeNode *topNode);
         int End(PHCompositeNode *topNode);
@@ -64,7 +63,9 @@ class MyRawClusterBuilder : public SubsysReco {
         float               _min_tower_e;
         int                 chkenergyconservation;
         string              detector;
+        
         std::vector<float>  _energy; 
+        std::vector<float>  _ET; 
         std::vector<float>  _eta; 
         std::vector<float>  _phi;
 
