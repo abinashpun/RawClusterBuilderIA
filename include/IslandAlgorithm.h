@@ -103,10 +103,8 @@ namespace IslandAlgorithm {
             int currBinEta = seed.getBinEta();
             int currBinPhi = seed.getBinPhi();
 
-
             int nPhiUp = 0;
             RawTower* nextTower = _towers->getTower(currBinEta, _movePhi("north", currBinPhi));
-
             clusterID++;
         }
         return clusteredTowers;
