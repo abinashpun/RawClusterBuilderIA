@@ -29,17 +29,17 @@ MyRawClusterBuilder::MyRawClusterBuilder(const string& name)
         }
 
         cout << " - - - - - - - - - - - - - - - - - -  - - - -  - " << endl;
-        cout << "PARTICLE TYPE IS SET TO " << particleType << endl;
+        cout << "PARTICLE TYPE IS SET TO " << particleType          << endl;
         cout << " - - - - - - - - - - - - - - - - - -  - - - -  - " << endl;
 
         const string fileName = PATH + Form("rcb_%s_%dGeV.root", particleType.data(), (int)(genEnergy*10));
         _file = new TFile(fileName.c_str(),"RECREATE"); 
         
-        string varList  = "genPT:recoEnergy:recoET:eta:phi:nTowers";
-        ntp_cluster     = new TNtuple("ntp_cluster", "cluster values", varList.data());
-
-        varList         = "energy:ET:eta:phi:ieta:iphi";
-        ntp_tower       = new TNtuple("ntp_tower", "tower values", varList.data());
+        string varList;
+        varList     = "genPT:recoEnergy:recoET:eta:phi:nTowers";
+        ntp_cluster = new TNtuple("ntp_cluster", "cluster values", varList.data());
+        varList     = "energy:ET:eta:phi:ieta:iphi";
+        ntp_tower   = new TNtuple("ntp_tower", "tower values", varList.data());
 
         return Fun4AllReturnCodes::EVENT_OK;
     }
@@ -153,19 +153,37 @@ void MyRawClusterBuilder::_InsertTower(std::list<RTHelper>&  towerList, RawTower
 }
 
 
+/* ------------------------------------------------------------------------------------------ *
+   _SumOverTowers is the main workhorse for calculating/filling the cluster attribute 
+    vectors: _energy, _ET, _eta, _phi. All the _FillClusters* functions call this, 
+    and some require a bit more fine tuning afterward, but this performs the main calculation.
+* ------------------------------------------------------------------------------------------ */
+enum TowerValue {Energy, ET, Eta, Phi};
+void MyRawClusterBuilder::_SumOverTowers(std::vector<float>& vec, 
+                                         TowerValue towerVal, 
+                                         TowerMap clusteredTowers) {
+
+    foreach (TowerPair& towerPair, clusteredTowers) {
+        RTHelper tower = towerPair.second;
+        switch(towerVal) {
+            case Energy: vec[towerPair.first] += tower.getEnergy();                     break;
+            case ET:     vec[towerPair.first] += tower.getET();                         break;
+            case Eta:    vec[towerPair.first] += tower.getET() * tower.getEtaCenter();  break;
+            case Phi:    vec[towerPair.first] += tower.getET() * tower.getEtaCenter();  break;
+        }
+    }
+
+}
+
 // 1.
 void MyRawClusterBuilder::_FillClustersEnergy(TowerMap clusteredTowers) {
-    foreach (TowerPair& towerPair, clusteredTowers) {
-        _energy[towerPair.first] += towerPair.second.getEnergy();
-        _ET[towerPair.first] += towerPair.second.getET();
-    }
+    _SumOverTowers(_energy, TowerValue::Energy, clusteredTowers);
+    _SumOverTowers(_ET, TowerValue::ET, clusteredTowers);
 }
 
 // 2.
 void MyRawClusterBuilder::_FillClustersEta(TowerMap clusteredTowers) {
-    foreach (TowerPair& towerPair, clusteredTowers) {
-        _eta[towerPair.first]   += towerPair.second.getET() * towerPair.second.getEtaCenter();
-    }
+    _SumOverTowers(_eta, TowerValue::Eta, clusteredTowers);
     for (unsigned i = 0; i < _clusters->size(); i++) {
         _eta[i] = (_ET[i] > 0) ? _eta[i] / _ET[i] : 0.0;
     }
@@ -174,9 +192,7 @@ void MyRawClusterBuilder::_FillClustersEta(TowerMap clusteredTowers) {
 // 3.
 void MyRawClusterBuilder::_FillClustersPhi(TowerMap clusteredTowers) {
     // First, get all constitutent tower phi's as an energy-weighted sum.
-    foreach (TowerPair& towerPair, clusteredTowers) {
-        _phi[towerPair.first] += towerPair.second.getET() * towerPair.second.getPhiCenter();
-    }
+    _SumOverTowers(_phi, TowerValue::Phi, clusteredTowers);
     // Then divide by the total cluster energy.
     for (unsigned int i = 0; i < _clusters->size(); i++) {
         _phi[i] = (_ET[i] > 0) ? _phi[i] / _ET[i] : 0.0;

@@ -44,7 +44,6 @@ typedef std::multimap<int, RTHelper>             TowerMap;
 typedef std::pair<const int, RTHelper>           TowerPair;
 typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
-
 class MyRawClusterBuilder : public SubsysReco {
     public:
         MyRawClusterBuilder(const std::string& name = "MyRawClusterBuilder"); 
@@ -56,17 +55,17 @@ class MyRawClusterBuilder : public SubsysReco {
         void set_threshold_energy(const float e)    { _min_tower_e = e; }
         void checkenergy(const int i = 1)           { chkenergyconservation = i; }
         void SetGenEnergy(float e)                  { genEnergy = e; }
-        void SetParticleType(string s)                  { particleType = s; }
+        void SetParticleType(string s)              { particleType = s; }
     private:
         RawClusterContainer*_clusters;
         RTContainer*        _towers;
         RTGeomContainer*    _towerGeom;
-        float               _min_tower_e;
-        int                 chkenergyconservation;
-        string              detector;
-        
-        float genEnergy; // TODO: change when know how to get gen info. 
-        string particleType;
+
+        int     chkenergyconservation;
+        float   _min_tower_e;
+        float   genEnergy;
+        string  particleType;
+        string  detector;
         
         std::vector<float>  _energy; 
         std::vector<float>  _ET; 
@@ -78,6 +77,7 @@ class MyRawClusterBuilder : public SubsysReco {
         TNtuple* ntp_cluster;
         TNtuple* ntp_tower;
 
+        // Private helper methods. 
         int  _NodeError(string nodeName, int retCode);
         void _AssignClusterValues(int iCluster);
         void _CreateNodes(PHCompositeNode *topNode);
@@ -93,6 +93,7 @@ class MyRawClusterBuilder : public SubsysReco {
         void _ShowTreeEntries();
         void _FillTowerTree(std::list<RTHelper>);
         void _FillClusterTree();
+        void _SumOverTowers(std::vector<float>&, TowerValue, TowerMap) {
 };
 
 #endif
