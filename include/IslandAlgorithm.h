@@ -89,6 +89,30 @@ namespace IslandAlgorithm {
         return seedTowers;
     }
 
+    TowerMap GetSimpleClusters(std::list<RTHelper> seedTowers, 
+                                RTContainer*        _towers, 
+                                RTGeomContainer*    _towerGeom) {
+
+        int clusterID = 0;
+        TowerMap clusteredTowers;
+        foreach (RTHelper& seed, seedTowers) {
+            // Begin by inserting the seed tower, which defines a cluster.
+            clusteredTowers.insert(std::make_pair(clusterID, seed));
+            _PrintTowerMsg(seed, clusteredTowers.size(), "SEED");
+
+            int currBinEta = seed.getBinEta();
+            int currBinPhi = seed.getBinPhi();
+
+
+            int nPhiUp = 0;
+            RawTower* nextTower = _towers->getTower(currBinEta, _movePhi("north", currBinPhi));
+
+            clusterID++;
+        }
+        return clusteredTowers;
+
+    }
+
     /* ------------------------------------------------------------------------------------------ *
        2.   Starting from the most energetic seed, the algorithm collects crystals belonging to 
             a certain cluster. Moves both directions in phi, collecting all towers until it sees

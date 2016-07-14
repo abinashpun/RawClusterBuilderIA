@@ -27,8 +27,7 @@ using std::cout;
 using std::endl;
 using std::string;
 
-const float GEN_ENERGY = 20.0; // TODO: change when know how to get gen info. 
-const string PATH = "/phenix/u/bmckinz/sphenix_src/";
+const string PATH = "/phenix/u/bmckinz/sphenix_src/rootFiles/";
 
 // Forward class declarations.
 class PHCompositeNode;
@@ -56,6 +55,8 @@ class MyRawClusterBuilder : public SubsysReco {
         void Detector(const string &d)              { detector = d; }
         void set_threshold_energy(const float e)    { _min_tower_e = e; }
         void checkenergy(const int i = 1)           { chkenergyconservation = i; }
+        void SetGenEnergy(float e)                  { genEnergy = e; }
+        void SetParticleType(string s)                  { particleType = s; }
     private:
         RawClusterContainer*_clusters;
         RTContainer*        _towers;
@@ -63,6 +64,9 @@ class MyRawClusterBuilder : public SubsysReco {
         float               _min_tower_e;
         int                 chkenergyconservation;
         string              detector;
+        
+        float genEnergy; // TODO: change when know how to get gen info. 
+        string particleType;
         
         std::vector<float>  _energy; 
         std::vector<float>  _ET; 

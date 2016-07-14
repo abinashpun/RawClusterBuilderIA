@@ -28,7 +28,11 @@ MyRawClusterBuilder::MyRawClusterBuilder(const string& name)
             throw;
         }
 
-        const string fileName = PATH + Form("rootFiles/rcb_%s_%dGeV.root", "Gamma", (int) GEN_ENERGY);
+        cout << " - - - - - - - - - - - - - - - - - -  - - - -  - " << endl;
+        cout << "PARTICLE TYPE IS SET TO " << particleType << endl;
+        cout << " - - - - - - - - - - - - - - - - - -  - - - -  - " << endl;
+
+        const string fileName = PATH + Form("rcb_%s_%dGeV.root", particleType.data(), (int)(genEnergy*10));
         _file = new TFile(fileName.c_str(),"RECREATE"); 
         
         string varList  = "genPT:recoEnergy:recoET:eta:phi:nTowers";
@@ -66,12 +70,14 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     RTHelper::setMaxPhiBin(_towerGeom->get_phibins());
     RTHelper::setMaxEtaBin(_towerGeom->get_etabins());
 
-    // Make the list of _towers above minimum energy threshold.
+    // ------------------------------------------------------------------------------------------
+    // The Island Algorithm:
+    // 1. Construct list of seed towers, defined as having energy above some threshold. 
+    // 2. Cluster the towers via searching method along eta and phi from each seed.
+    // ------------------------------------------------------------------------------------------
     set_threshold_energy(0.1);
-    std::list<RTHelper> seedTowers = IAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
-
-    // Cluster the towers. 
-    TowerMap clusteredTowers = IAlgorithm::GetClusteredTowers(seedTowers, _towers, _towerGeom);
+    std::list<RTHelper> seedTowers  = IAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
+    TowerMap clusteredTowers        = IAlgorithm::GetClusteredTowers(seedTowers, _towers, _towerGeom);
 
     // Fill _clusters (now empty) with the clusteredTowers and calculate their values.
     foreach (TowerPair& towerPair, clusteredTowers) {
@@ -315,7 +321,7 @@ void MyRawClusterBuilder::_FillTowerTree(std::list<RTHelper> allTowers) {
 void MyRawClusterBuilder::_FillClusterTree() {
     for (unsigned i = 0; i < _clusters->size(); i++) {
         ntp_cluster->Fill( 
-                GEN_ENERGY,
+                genEnergy,
                 _energy[i], 
                 _ET[i], 
                 _eta[i], 
