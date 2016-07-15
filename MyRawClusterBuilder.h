@@ -22,6 +22,8 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TNtuple.h"
+#include "TROOT.h"
+
 
 using std::cout;
 using std::endl;
@@ -36,13 +38,14 @@ class RawClusterContainer;
 class RawTowerContainer;
 class RawTowerGeomContainer;
 class RTHelper;
-class ClusterHelper;
+
 
 typedef RawTowerContainer                        RTContainer;
 typedef RawTowerGeomContainer                    RTGeomContainer;
 typedef std::multimap<int, RTHelper>             TowerMap;
 typedef std::pair<const int, RTHelper>           TowerPair;
 typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
+
 
 class MyRawClusterBuilder : public SubsysReco {
     public:
@@ -58,14 +61,14 @@ class MyRawClusterBuilder : public SubsysReco {
         void SetParticleType(string s)              { particleType = s; }
     private:
         RawClusterContainer*_clusters;
+        float   _min_tower_e;
+        int     chkenergyconservation;
+        string  detector;
         RTContainer*        _towers;
         RTGeomContainer*    _towerGeom;
 
-        int     chkenergyconservation;
-        float   _min_tower_e;
         float   genEnergy;
         string  particleType;
-        string  detector;
         
         std::vector<float>  _energy; 
         std::vector<float>  _ET; 
@@ -76,6 +79,9 @@ class MyRawClusterBuilder : public SubsysReco {
         TFile* _file;
         TNtuple* ntp_cluster;
         TNtuple* ntp_tower;
+
+        TTree* _tCluster;
+        std::vector<int> towerIDs;
 
         // Private helper methods. 
         int  _NodeError(string nodeName, int retCode);
@@ -93,7 +99,6 @@ class MyRawClusterBuilder : public SubsysReco {
         void _ShowTreeEntries();
         void _FillTowerTree(std::list<RTHelper>);
         void _FillClusterTree();
-        void _SumOverTowers(std::vector<float>&, TowerValue, TowerMap) {
 };
 
 #endif

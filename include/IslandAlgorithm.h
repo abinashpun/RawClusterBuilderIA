@@ -1,16 +1,19 @@
+#ifndef ISLANDALGORITHM_H_
+#define ISLANDALGORITHM_H_
+
 #include <map>
-#include "RTHelper.h"
-#include "PHMakeGroups.h"
+#include <set>
 #include <g4cemc/RawTower.h>
 #include <g4cemc/RawTowerContainer.h>
 #include <g4cemc/RawTowerGeomContainer.h>
 
+#ifndef EATSHIT
+#define EATSHIT
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
-#include <boost/bind.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/connected_components.hpp>
+#endif
+#include "RTHelper.h"
 
 #ifndef __MYRAWCLUSTERBUILDER_H__
 typedef RawTowerContainer               RTContainer;
@@ -93,8 +96,9 @@ namespace IslandAlgorithm {
                                 RTContainer*        _towers, 
                                 RTGeomContainer*    _towerGeom) {
 
-        int clusterID = 0;
         TowerMap clusteredTowers;
+        /*
+        int clusterID = 0;
         foreach (RTHelper& seed, seedTowers) {
             // Begin by inserting the seed tower, which defines a cluster.
             clusteredTowers.insert(std::make_pair(clusterID, seed));
@@ -107,6 +111,7 @@ namespace IslandAlgorithm {
             RawTower* nextTower = _towers->getTower(currBinEta, _movePhi("north", currBinPhi));
             clusterID++;
         }
+        */
         return clusteredTowers;
 
     }
@@ -229,9 +234,11 @@ namespace IslandAlgorithm {
         cout << index << ". [" << phiOrEta << "] "
              << "Inserted towerID "  << tower.getID()     << endl
              << "\tEnergy="       << tower.getEnergy() << "; "
-             << "BinEta="           << tower.getBinEta() << "; "
-             << "BinPhi="           << tower.getBinPhi() 
+             << "Eta="           << tower.getEtaCenter() << "; "
+             << "Phi="           << tower.getPhiCenter() 
              << endl;
     }
 
 }
+
+#endif

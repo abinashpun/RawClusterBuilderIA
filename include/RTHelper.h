@@ -96,12 +96,12 @@ RawTower* RTHelper::GetRawTower(RTHelper towerHelper, RawTowerContainer* towers)
 }
 
 void RTHelper::ExitOnIDMismatch(int id1, int id2) {
-    cout <<__PRETTY_FUNCTION__
+    std::cout <<__PRETTY_FUNCTION__
         << " - Fatal Error - id mismatch. internal: " 
         << id1
         << ", towercontainer: " 
         << id2
-        << endl;
+        << std::endl;
     exit(1);
 }
 

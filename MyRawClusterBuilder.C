@@ -1,6 +1,6 @@
 #include "MyRawClusterBuilder.h"
-#include "RTHelper.h"
 #include "IslandAlgorithm.h"
+#include "RTHelper.h"
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
@@ -35,11 +35,17 @@ MyRawClusterBuilder::MyRawClusterBuilder(const string& name)
         const string fileName = PATH + Form("rcb_%s_%dGeV.root", particleType.data(), (int)(genEnergy*10));
         _file = new TFile(fileName.c_str(),"RECREATE"); 
         
+        gROOT->ProcessLine("#include <vector>");
+
         string varList;
-        varList     = "genPT:recoEnergy:recoET:eta:phi:nTowers";
+        varList     = "id:genPT:recoEnergy:recoET:eta:phi:nClusters:nTowers";
         ntp_cluster = new TNtuple("ntp_cluster", "cluster values", varList.data());
-        varList     = "energy:ET:eta:phi:ieta:iphi";
+        varList     = "id:energy:ET:eta:phi:ieta:iphi";
         ntp_tower   = new TNtuple("ntp_tower", "tower values", varList.data());
+
+        _tCluster = new TTree("tCluster", "cluster tree");
+        _tCluster->Branch("towerIDs",  &towerIDs);
+        _tCluster->Branch("ntp_cluster", ntp_cluster);
 
         return Fun4AllReturnCodes::EVENT_OK;
     }
@@ -51,6 +57,7 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
 
     namespace IAlgorithm = IslandAlgorithm;
     string nodeName;
+    towerIDs.clear();
     _energy.clear();
     _ET.clear();
     _eta.clear();
@@ -152,38 +159,57 @@ void MyRawClusterBuilder::_InsertTower(std::list<RTHelper>&  towerList, RawTower
     towerList.push_back(rtHelper);
 }
 
-
-/* ------------------------------------------------------------------------------------------ *
-   _SumOverTowers is the main workhorse for calculating/filling the cluster attribute 
-    vectors: _energy, _ET, _eta, _phi. All the _FillClusters* functions call this, 
-    and some require a bit more fine tuning afterward, but this performs the main calculation.
-* ------------------------------------------------------------------------------------------ */
-enum TowerValue {Energy, ET, Eta, Phi};
-void MyRawClusterBuilder::_SumOverTowers(std::vector<float>& vec, 
-                                         TowerValue towerVal, 
-                                         TowerMap clusteredTowers) {
-
-    foreach (TowerPair& towerPair, clusteredTowers) {
-        RTHelper tower = towerPair.second;
-        switch(towerVal) {
-            case Energy: vec[towerPair.first] += tower.getEnergy();                     break;
-            case ET:     vec[towerPair.first] += tower.getET();                         break;
-            case Eta:    vec[towerPair.first] += tower.getET() * tower.getEtaCenter();  break;
-            case Phi:    vec[towerPair.first] += tower.getET() * tower.getEtaCenter();  break;
-        }
+void MyRawClusterBuilder::_FillTowerTree(std::list<RTHelper> allTowers) {
+    foreach (RTHelper& tower, allTowers) {
+        ntp_tower->Fill(
+                tower.getID(), 
+                tower.getEnergy(), 
+                tower.getET(),
+                tower.getEtaCenter(), 
+                tower.getPhiCenter(), 
+                tower.getBinEta(), 
+                tower.getBinPhi());
     }
+}
 
+void MyRawClusterBuilder::_FillClusterTree() {
+    typedef std::pair<RawTowerDefs::keytype, float> TowIDEnergy;
+    for (unsigned i = 0; i < _clusters->size(); i++) {
+
+        RawCluster* rawCluster = _clusters->getCluster(i);
+
+        foreach (TowIDEnergy towIDEnergy, rawCluster->get_towers()) {
+            towerIDs.push_back((int) towIDEnergy.first);
+        }
+        
+        ntp_cluster->Fill(  rawCluster->get_id(), 
+                            genEnergy,
+                            _energy[i], 
+                            _ET[i], 
+                            _eta[i], 
+                            _phi[i], 
+                            _clusters->size(),
+                            rawCluster->getNTowers()  );
+
+        _tCluster->Fill();
+    }
 }
 
 // 1.
 void MyRawClusterBuilder::_FillClustersEnergy(TowerMap clusteredTowers) {
-    _SumOverTowers(_energy, TowerValue::Energy, clusteredTowers);
-    _SumOverTowers(_ET, TowerValue::ET, clusteredTowers);
+    foreach (TowerPair& towerPair, clusteredTowers) {
+        RTHelper tower = towerPair.second;
+        _energy[towerPair.first] += tower.getEnergy();  
+        _ET[towerPair.first] += tower.getET();
+    }
 }
 
 // 2.
 void MyRawClusterBuilder::_FillClustersEta(TowerMap clusteredTowers) {
-    _SumOverTowers(_eta, TowerValue::Eta, clusteredTowers);
+    foreach (TowerPair& towerPair, clusteredTowers) {
+        RTHelper tower = towerPair.second;
+        _eta[towerPair.first] += tower.getET() * tower.getEtaCenter();
+    }
     for (unsigned i = 0; i < _clusters->size(); i++) {
         _eta[i] = (_ET[i] > 0) ? _eta[i] / _ET[i] : 0.0;
     }
@@ -191,8 +217,11 @@ void MyRawClusterBuilder::_FillClustersEta(TowerMap clusteredTowers) {
 
 // 3.
 void MyRawClusterBuilder::_FillClustersPhi(TowerMap clusteredTowers) {
+    foreach (TowerPair& towerPair, clusteredTowers) {
+        RTHelper tower = towerPair.second;
+        _phi[towerPair.first] += tower.getET() * tower.getPhiCenter();
+    }
     // First, get all constitutent tower phi's as an energy-weighted sum.
-    _SumOverTowers(_phi, TowerValue::Phi, clusteredTowers);
     // Then divide by the total cluster energy.
     for (unsigned int i = 0; i < _clusters->size(); i++) {
         _phi[i] = (_ET[i] > 0) ? _phi[i] / _ET[i] : 0.0;
@@ -276,7 +305,6 @@ bool MyRawClusterBuilder::_CorrectPhi(RawCluster* cluster) {
     cluster->set_phi(mean);
     return true; // mean phi was corrected
 }
-
 void MyRawClusterBuilder::_CheckEnergyConservation() {
     double ecluster = _clusters->getTotalEdep();
     double etower   = _towers->getTotalEdep();
@@ -318,31 +346,8 @@ void MyRawClusterBuilder::_PrintCluster(TowerPair towerPair) {
 
 void MyRawClusterBuilder::_ShowTreeEntries() {
     for (int i = 0; i < ntp_cluster->GetEntries(); i++) {
-        ntp_cluster->Show(i);
+        //ntp_cluster->Show(i);
+        _tCluster->Show(i);
     } 
 }
 
-void MyRawClusterBuilder::_FillTowerTree(std::list<RTHelper> allTowers) {
-    foreach (RTHelper& tower, allTowers) {
-        ntp_tower->Fill(
-                tower.getEnergy(), 
-                tower.getET(),
-                tower.getEtaCenter(), 
-                tower.getPhiCenter(), 
-                tower.getBinEta(), 
-                tower.getBinPhi());
-    }
-}
-
-void MyRawClusterBuilder::_FillClusterTree() {
-    for (unsigned i = 0; i < _clusters->size(); i++) {
-        ntp_cluster->Fill( 
-                genEnergy,
-                _energy[i], 
-                _ET[i], 
-                _eta[i], 
-                _phi[i], 
-                _clusters->getCluster(i)->getNTowers()
-                );
-    }
-}
