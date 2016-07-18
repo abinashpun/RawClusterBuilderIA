@@ -24,7 +24,6 @@
 #include "TNtuple.h"
 #include "TROOT.h"
 
-
 using std::cout;
 using std::endl;
 using std::string;
@@ -38,7 +37,6 @@ class RawClusterContainer;
 class RawTowerContainer;
 class RawTowerGeomContainer;
 class RTHelper;
-
 
 typedef RawTowerContainer                        RTContainer;
 typedef RawTowerGeomContainer                    RTGeomContainer;
@@ -57,7 +55,7 @@ class MyRawClusterBuilder : public SubsysReco {
         void Detector(const string &d)              { detector = d; }
         void set_threshold_energy(const float e)    { _min_tower_e = e; }
         void checkenergy(const int i = 1)           { chkenergyconservation = i; }
-        void SetGenEnergy(float e)                  { genEnergy = e; }
+        void SetGenPT(float pt)                  { _genPT = pt; }
         void SetParticleType(string s)              { particleType = s; }
     private:
         RawClusterContainer*_clusters;
@@ -67,21 +65,28 @@ class MyRawClusterBuilder : public SubsysReco {
         RTContainer*        _towers;
         RTGeomContainer*    _towerGeom;
 
-        float   genEnergy;
         string  particleType;
-        
+
+        // ROOT I/O Objects. 
+        TFile* _file;
+        TNtuple* ntp_tower;
+        TTree* _tCluster;
+        std::vector<int> towerIDs;
+
+        // Cluster variables.
+        int     _clusterID;
+        float   _genPT;
+        float _f_energy;
+        float _f_ET;
+        float _f_eta;
+        float _f_phi;
+        int     _nClusters;
+        int     _nTowers;
+
         std::vector<float>  _energy; 
         std::vector<float>  _ET; 
         std::vector<float>  _eta; 
         std::vector<float>  _phi;
-
-        // ROOT I/O Objects. 
-        TFile* _file;
-        TNtuple* ntp_cluster;
-        TNtuple* ntp_tower;
-
-        TTree* _tCluster;
-        std::vector<int> towerIDs;
 
         // Private helper methods. 
         int  _NodeError(string nodeName, int retCode);

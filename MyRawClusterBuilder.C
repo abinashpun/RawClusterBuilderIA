@@ -32,20 +32,25 @@ MyRawClusterBuilder::MyRawClusterBuilder(const string& name)
         cout << "PARTICLE TYPE IS SET TO " << particleType          << endl;
         cout << " - - - - - - - - - - - - - - - - - -  - - - -  - " << endl;
 
-        const string fileName = PATH + Form("rcb_%s_%dGeV.root", particleType.data(), (int)(genEnergy*10));
+        const string fileName = PATH + Form("rcb_%s_%dGeV.root", particleType.data(), (int)(_genPT*10));
         _file = new TFile(fileName.c_str(),"RECREATE"); 
         
         gROOT->ProcessLine("#include <vector>");
 
         string varList;
-        varList     = "id:genPT:recoEnergy:recoET:eta:phi:nClusters:nTowers";
-        ntp_cluster = new TNtuple("ntp_cluster", "cluster values", varList.data());
-        varList     = "id:energy:ET:eta:phi:ieta:iphi";
+        varList     = "id:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi";
         ntp_tower   = new TNtuple("ntp_tower", "tower values", varList.data());
 
         _tCluster = new TTree("tCluster", "cluster tree");
         _tCluster->Branch("towerIDs",  &towerIDs);
-        _tCluster->Branch("ntp_cluster", ntp_cluster);
+        _tCluster->Branch("clusterID", &_clusterID);
+        _tCluster->Branch("genPT", &_genPT);
+        _tCluster->Branch("recoEnergy", &_f_energy);
+        _tCluster->Branch("recoET", &_f_ET);
+        _tCluster->Branch("eta", &_f_eta);
+        _tCluster->Branch("phi", &_f_phi);
+        _tCluster->Branch("nClusters", &_nClusters);
+        _tCluster->Branch("nTowers", &_nTowers);
 
         return Fun4AllReturnCodes::EVENT_OK;
     }
@@ -168,7 +173,10 @@ void MyRawClusterBuilder::_FillTowerTree(std::list<RTHelper> allTowers) {
                 tower.getEtaCenter(), 
                 tower.getPhiCenter(), 
                 tower.getBinEta(), 
-                tower.getBinPhi());
+                tower.getBinPhi(), 
+                tower.getMaxEtaBin(), 
+                tower.getMaxPhiBin());
+
     }
 }
 
@@ -182,14 +190,13 @@ void MyRawClusterBuilder::_FillClusterTree() {
             towerIDs.push_back((int) towIDEnergy.first);
         }
         
-        ntp_cluster->Fill(  rawCluster->get_id(), 
-                            genEnergy,
-                            _energy[i], 
-                            _ET[i], 
-                            _eta[i], 
-                            _phi[i], 
-                            _clusters->size(),
-                            rawCluster->getNTowers()  );
+        _clusterID = rawCluster->get_id();
+        _f_energy = _energy[i];
+        _f_ET = _ET[i];
+        _f_eta = _eta[i];
+        _f_phi = _phi[i];
+        _nClusters = _clusters->size();
+        _nTowers = rawCluster->getNTowers();
 
         _tCluster->Fill();
     }
@@ -345,8 +352,7 @@ void MyRawClusterBuilder::_PrintCluster(TowerPair towerPair) {
 }
 
 void MyRawClusterBuilder::_ShowTreeEntries() {
-    for (int i = 0; i < ntp_cluster->GetEntries(); i++) {
-        //ntp_cluster->Show(i);
+    for (int i = 0; i < _tCluster->GetEntries(); i++) {
         _tCluster->Show(i);
     } 
 }
