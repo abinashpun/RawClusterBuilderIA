@@ -28,7 +28,7 @@ using std::cout;
 using std::endl;
 using std::string;
 
-const string PATH = "/phenix/u/bmckinz/sphenix_src/rootFiles/";
+const string PATH = "~/bmckinz/MyRawClusterBuilder/rootFiles/";
 
 // Forward class declarations.
 class PHCompositeNode;
@@ -49,7 +49,7 @@ class MyRawClusterBuilder : public SubsysReco {
     public:
         MyRawClusterBuilder(const std::string& name = "MyRawClusterBuilder"); 
         virtual ~MyRawClusterBuilder() {}
-        int Init(PHCompositeNode *topNode);
+        int Init/*Run*/(PHCompositeNode *topNode);
         int process_event(PHCompositeNode *topNode);
         int End(PHCompositeNode *topNode);
         void Detector(const string &d)              { detector = d; }

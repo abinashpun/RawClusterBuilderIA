@@ -17,43 +17,43 @@ MyRawClusterBuilder::MyRawClusterBuilder(const string& name)
     chkenergyconservation(0),
     detector("NONE") {}
 
-    /* ----------------------------------------------------- *
-     * MyRawClusterBuilder::InitRun()                          *
-     * ----------------------------------------------------- */
-    int MyRawClusterBuilder::Init/*Run*/(PHCompositeNode *topNode) {
-        try {
-            _CreateNodes(topNode);
-        } catch (std::exception &e) {
-            cout << PHWHERE << ": " << e.what() << endl;
-            throw;
-        }
-
-        cout << " - - - - - - - - - - - - - - - - - -  - - - -  - " << endl;
-        cout << "PARTICLE TYPE IS SET TO " << particleType          << endl;
-        cout << " - - - - - - - - - - - - - - - - - -  - - - -  - " << endl;
-
-        const string fileName = PATH + Form("rcb_%s_%dGeV.root", particleType.data(), (int)(_genPT*10));
-        _file = new TFile(fileName.c_str(),"RECREATE"); 
-        
-        gROOT->ProcessLine("#include <vector>");
-
-        string varList;
-        varList     = "id:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi";
-        ntp_tower   = new TNtuple("ntp_tower", "tower values", varList.data());
-
-        _tCluster = new TTree("tCluster", "cluster tree");
-        _tCluster->Branch("towerIDs",  &towerIDs);
-        _tCluster->Branch("clusterID", &_clusterID);
-        _tCluster->Branch("genPT", &_genPT);
-        _tCluster->Branch("recoEnergy", &_f_energy);
-        _tCluster->Branch("recoET", &_f_ET);
-        _tCluster->Branch("eta", &_f_eta);
-        _tCluster->Branch("phi", &_f_phi);
-        _tCluster->Branch("nClusters", &_nClusters);
-        _tCluster->Branch("nTowers", &_nTowers);
-
-        return Fun4AllReturnCodes::EVENT_OK;
+/* ----------------------------------------------------- *
+ * MyRawClusterBuilder::InitRun()                          *
+ * ----------------------------------------------------- */
+int MyRawClusterBuilder::Init/*Run*/(PHCompositeNode *topNode) {
+    try {
+        _CreateNodes(topNode);
+    } catch (std::exception &e) {
+        cout << PHWHERE << ": " << e.what() << endl;
+        throw;
     }
+
+    cout << " - - - - - - - - - - - - - - - - - -  - - - -  - " << endl;
+    cout << "PARTICLE TYPE IS SET TO " << particleType          << endl;
+    cout << " - - - - - - - - - - - - - - - - - -  - - - -  - " << endl;
+
+    const string fileName = PATH + Form("rcb_%s_%dGeV.root", particleType.data(), (int)(_genPT*10));
+    _file = new TFile(fileName.c_str(),"RECREATE"); 
+
+    gROOT->ProcessLine("#include <vector>");
+
+    string varList;
+    varList     = "id:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi";
+    ntp_tower   = new TNtuple("ntp_tower", "tower values", varList.data());
+
+    _tCluster = new TTree("tCluster", "cluster tree");
+    _tCluster->Branch("towerIDs",  &towerIDs);
+    _tCluster->Branch("clusterID", &_clusterID);
+    _tCluster->Branch("genPT", &_genPT);
+    _tCluster->Branch("recoEnergy", &_f_energy);
+    _tCluster->Branch("recoET", &_f_ET);
+    _tCluster->Branch("eta", &_f_eta);
+    _tCluster->Branch("phi", &_f_phi);
+    _tCluster->Branch("nClusters", &_nClusters);
+    _tCluster->Branch("nTowers", &_nTowers);
+
+    return Fun4AllReturnCodes::EVENT_OK;
+}
 
 /* ------------------------------------------------------------ *
  * MyRawClusterBuilder::process_event(...)                        *
@@ -189,7 +189,7 @@ void MyRawClusterBuilder::_FillClusterTree() {
         foreach (TowIDEnergy towIDEnergy, rawCluster->get_towers()) {
             towerIDs.push_back((int) towIDEnergy.first);
         }
-        
+
         _clusterID = rawCluster->get_id();
         _f_energy = _energy[i];
         _f_ET = _ET[i];
@@ -207,7 +207,7 @@ void MyRawClusterBuilder::_FillClustersEnergy(TowerMap clusteredTowers) {
     foreach (TowerPair& towerPair, clusteredTowers) {
         RTHelper tower = towerPair.second;
         _energy[towerPair.first] += tower.getEnergy();  
-        _ET[towerPair.first] += tower.getET();
+        _ET[towerPair.first]     += tower.getET();
     }
 }
 
