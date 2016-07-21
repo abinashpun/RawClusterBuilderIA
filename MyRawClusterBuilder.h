@@ -16,6 +16,7 @@
 #include "g4cemc/RawTower.h"
 #include "g4cemc/RawTowerGeomContainer.h"
 #include "g4cemc/RawTowerContainer.h"
+#include "g4cemc/RawCluster.h"
 #include "include/RawClusterv1.h"
 #include "g4cemc/RawClusterContainer.h"
 // ROOT Includes.
@@ -38,8 +39,9 @@ class RawTowerContainer;
 class RawTowerGeomContainer;
 class RTHelper;
 
-typedef RawTowerContainer                        RTContainer;
-typedef RawTowerGeomContainer                    RTGeomContainer;
+typedef RawTowerContainer       RTContainer;
+typedef RawTowerGeomContainer   RTGeomContainer;
+
 typedef std::multimap<int, RTHelper>             TowerMap;
 typedef std::pair<const int, RTHelper>           TowerPair;
 typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
@@ -49,49 +51,48 @@ class MyRawClusterBuilder : public SubsysReco {
     public:
         MyRawClusterBuilder(const std::string& name = "MyRawClusterBuilder"); 
         virtual ~MyRawClusterBuilder() {}
-        int Init/*Run*/(PHCompositeNode *topNode);
+        int Init(PHCompositeNode *topNode);
         int process_event(PHCompositeNode *topNode);
         int End(PHCompositeNode *topNode);
         void Detector(const string &d)              { detector = d; }
         void set_threshold_energy(const float e)    { _min_tower_e = e; }
         void checkenergy(const int i = 1)           { chkenergyconservation = i; }
-        void SetGenPT(float pt)                  { _genPT = pt; }
-        void SetParticleType(string s)              { particleType = s; }
+        void SetGenPT(float pt)                     { _genPT = pt; }
+        void SetParticleType(string s)              { _particleType = s; }
     private:
+        // Variables initialized in constructor list.
         RawClusterContainer*_clusters;
-        float   _min_tower_e;
-        int     chkenergyconservation;
-        string  detector;
+        float       _min_tower_e;
+        int         chkenergyconservation;
+        string      detector;
+
+        // Other sPHENIX private variables.
         RTContainer*        _towers;
         RTGeomContainer*    _towerGeom;
 
-        string  particleType;
+        string  _particleType;
 
         // ROOT I/O Objects. 
-        TFile* _file;
+        TFile*   _file;
         TNtuple* ntp_tower;
         TTree* _tCluster;
         std::vector<int> towerIDs;
-
-        // Cluster variables.
         int     _clusterID;
         float   _genPT;
-        float _f_energy;
-        float _f_ET;
-        float _f_eta;
-        float _f_phi;
+        float   _f_energy;
+        float   _f_ET;
+        float   _f_eta;
+        float   _f_phi;
         int     _nClusters;
         int     _nTowers;
 
-        std::vector<float>  _energy; 
-        std::vector<float>  _ET; 
-        std::vector<float>  _eta; 
-        std::vector<float>  _phi;
+        std::vector<float>  _energyVec; 
+        std::vector<float>  _ETVec; 
+        std::vector<float>  _etaVec; 
+        std::vector<float>  _phiVec;
 
         // Private helper methods. 
-        int  _NodeError(string nodeName, int retCode);
         void _AssignClusterValues(int iCluster);
-        void _CreateNodes(PHCompositeNode *topNode);
         void _PrintCluster(TowerPair);
         void _CheckEnergyConservation();
         void _FillClustersEnergy(TowerMap);
@@ -104,6 +105,8 @@ class MyRawClusterBuilder : public SubsysReco {
         void _ShowTreeEntries();
         void _FillTowerTree(std::list<RTHelper>);
         void _FillClusterTree();
+        int  _NodeError(string nodeName, int retCode);
+        void _CreateNodes(PHCompositeNode *topNode);
 };
 
 #endif
