@@ -15,6 +15,7 @@ MyRawClusterBuilder::MyRawClusterBuilder(const string& name)
     _clusters(NULL),
       _min_tower_e(0.0),
       chkenergyconservation(0),
+      _clusterSimple(false), 
       detector("NONE") {}
 
 /* ----------------------------------------------------- *
@@ -84,12 +85,16 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
 
     // ------------------------------------------------------------------------------------------
     // The Island Algorithm:
-    // 1. Construct list of seed towers, defined as having energy above some threshold. 
-    // 2. Cluster the towers via searching method along eta and phi from each seed.
-    // ------------------------------------------------------------------------------------------
+
     set_threshold_energy(0.1);
-    std::list<RTHelper> seedTowers  = IAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
-    TowerMap clusteredTowers        = IAlgorithm::GetClusteredTowers(seedTowers, _towers, _towerGeom);
+    // 1. Construct list of seed towers, defined as having energy above some threshold. 
+    std::list<RTHelper> seedTowers     = IAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
+    // 2. Cluster the towers via searching method along eta and phi from each seed.
+    TowerMap clusteredTowers;
+    if (_clusterSimple) clusteredTowers = IAlgorithm::GetSimpleClusters(seedTowers, _towers, _towerGeom);
+    else                clusteredTowers = IAlgorithm::GetClusteredTowers(seedTowers, _towers, _towerGeom);
+
+    // ------------------------------------------------------------------------------------------
 
     // Fill _clusters (now empty) with the clusteredTowers and calculate their values.
     foreach (TowerPair& towerPair, clusteredTowers) {

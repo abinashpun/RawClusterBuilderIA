@@ -59,12 +59,14 @@ class MyRawClusterBuilder : public SubsysReco {
         void checkenergy(const int i = 1)           { chkenergyconservation = i; }
         void SetGenPT(float pt)                     { _genPT = pt; }
         void SetParticleType(string s)              { _particleType = s; }
-        void SetEvent(int i)              { _iEvent = i; }
+        void SetEvent(int i)                        { _iEvent = i; }
+        void ClusterSimple(bool b)                  { _clusterSimple = b; }
     private:
         // Variables initialized in constructor list.
         RawClusterContainer*_clusters;
         float       _min_tower_e;
         int         chkenergyconservation;
+        bool        _clusterSimple;
         string      detector;
 
         int         _iEvent;
