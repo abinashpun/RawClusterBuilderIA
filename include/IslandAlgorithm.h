@@ -92,29 +92,62 @@ namespace IslandAlgorithm {
         return seedTowers;
     }
 
+    /*
+    // Make 5x5 clusters centered on each seed. 
     TowerMap GetSimpleClusters(std::list<RTHelper> seedTowers, 
                                 RTContainer*        _towers, 
                                 RTGeomContainer*    _towerGeom) {
 
         TowerMap clusteredTowers;
-        /*
         int clusterID = 0;
         foreach (RTHelper& seed, seedTowers) {
-            // Begin by inserting the seed tower, which defines a cluster.
             clusteredTowers.insert(std::make_pair(clusterID, seed));
             _PrintTowerMsg(seed, clusteredTowers.size(), "SEED");
 
-            int currBinEta = seed.getBinEta();
-            int currBinPhi = seed.getBinPhi();
-
-            int nPhiUp = 0;
-            RawTower* nextTower = _towers->getTower(currBinEta, _movePhi("north", currBinPhi));
+            RTHelper oneTowerUp = _OneStepPhi("north", seed, clusterID, _towers, clusteredTowers, _towerGeom);
+            if (oneTowerUp) { 
+                _OneStepPhi("north", oneTowerUp, clusterID, _towers, clusteredTowers, _towerGeom);
+            } else  {
+                int twoPhiBinsUp = seed.getBinPhi();
+                _movePhi("north", twoPhiBinsUp);
+                _movePhi("north", twoPhiBinsUp);
+                RawTower* twoTowersUp = _towers->getTower(seed.getBinEta(), twoPhiBinsUp);
+                if (twoTowersUp) {
+                    RTHelper rtHelper(nextTower);
+                    rtHelper.setCenter(_towerGeom);
+                    clusteredTowers.insert(std::make_pair(clusterID, rtHelper));
+                    _PrintTowerMsg(rtHelper, clusteredTowers.size(), "PHI");
+                }
+            }
             clusterID++;
         }
-        */
         return clusteredTowers;
 
     }
+
+
+    RTHelper _OneStepPhi(std::string direction,       RTHelper           currentTower,
+                    int&        clusterID,       RTContainer*       _towers,    
+                    TowerMap&   clusteredTowers, RTGeomContainer*   _towerGeom) {
+
+        // Get current tower info.
+        int currBinPhi   = currentTower.getBinPhi();
+        int currBinEta   = currentTower.getBinEta();
+
+        // Get next tower info to decide if we should add it.
+        RawTower* nextTower = _towers->getTower(currBinEta, _movePhi(direction, currBinPhi));
+
+        // Keep doing this until energy increase or hole.
+        if (nextTower) {
+            RTHelper rtHelper(nextTower);
+            rtHelper.setCenter(_towerGeom);
+            clusteredTowers.insert(std::make_pair(clusterID, rtHelper));
+            _PrintTowerMsg(rtHelper, clusteredTowers.size(), "PHI");
+            return rtHelper;
+        }
+        return NULL;
+    }
+    */
 
     /* ------------------------------------------------------------------------------------------ *
        2.   Starting from the most energetic seed, the algorithm collects crystals belonging to 

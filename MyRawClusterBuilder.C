@@ -38,11 +38,12 @@ int MyRawClusterBuilder::Init(PHCompositeNode* topNode) {
     gROOT->ProcessLine("#include <vector>");
 
     string varList;
-    varList     = "id:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi";
+    varList     = "id:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi:iEvent";
     ntp_tower   = new TNtuple("ntp_tower", "tower values", varList.data());
 
     _tCluster = new TTree("tCluster", "cluster tree");
     _tCluster->Branch("towerIDs",  &towerIDs);
+    _tCluster->Branch("iEvent", &_iEvent);
     _tCluster->Branch("clusterID", &_clusterID);
     _tCluster->Branch("genPT", &_genPT);
     _tCluster->Branch("recoEnergy", &_f_energy);
@@ -59,7 +60,7 @@ int MyRawClusterBuilder::Init(PHCompositeNode* topNode) {
  * MyRawClusterBuilder::process_event(...)                        *
  * ------------------------------------------------------------ */
 int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
-
+    //_iEvent++;
     namespace IAlgorithm = IslandAlgorithm;
     string nodeName;
     towerIDs.clear();
@@ -175,7 +176,8 @@ void MyRawClusterBuilder::_FillTowerTree(std::list<RTHelper> allTowers) {
                 tower.getBinEta(), 
                 tower.getBinPhi(), 
                 tower.getMaxEtaBin(), 
-                tower.getMaxPhiBin());
+                tower.getMaxPhiBin(), 
+                _iEvent);
 
     }
 }

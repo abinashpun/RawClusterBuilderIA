@@ -59,6 +59,7 @@ class MyRawClusterBuilder : public SubsysReco {
         void checkenergy(const int i = 1)           { chkenergyconservation = i; }
         void SetGenPT(float pt)                     { _genPT = pt; }
         void SetParticleType(string s)              { _particleType = s; }
+        void SetEvent(int i)              { _iEvent = i; }
     private:
         // Variables initialized in constructor list.
         RawClusterContainer*_clusters;
@@ -66,6 +67,7 @@ class MyRawClusterBuilder : public SubsysReco {
         int         chkenergyconservation;
         string      detector;
 
+        int         _iEvent;
         // Other sPHENIX private variables.
         RTContainer*        _towers;
         RTGeomContainer*    _towerGeom;
