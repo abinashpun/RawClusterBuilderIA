@@ -130,11 +130,12 @@ namespace IslandAlgorithm {
                         rtHelper.setCenter(_towerGeom);
                         clusteredTowers.insert(std::make_pair(clusterID, rtHelper));
                     }
+                }
             }
             clusterID++;
         }
-        return clusteredTowers;
 
+        return clusteredTowers;
     }
 
     /* ------------------------------------------------------------------------------------------ *

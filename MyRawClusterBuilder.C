@@ -181,7 +181,7 @@ void MyRawClusterBuilder::_FillTowerTree(std::list<RTHelper> allTowers) {
                 tower.getBinPhi(), 
                 tower.getMaxEtaBin(), 
                 tower.getMaxPhiBin(), 
-                allTowers->size(), 
+                allTowers.size(), 
                 _iEvent);
 
     }
