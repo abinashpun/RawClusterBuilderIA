@@ -38,7 +38,7 @@ int MyRawClusterBuilder::Init(PHCompositeNode* topNode) {
     gROOT->ProcessLine("#include <vector>");
 
     string varList;
-    varList     = "id:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi:iEvent";
+    varList     = "id:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi:nAllTowers:iEvent";
     ntp_tower   = new TNtuple("ntp_tower", "tower values", varList.data());
 
     _tCluster = new TTree("tCluster", "cluster tree");
@@ -60,7 +60,6 @@ int MyRawClusterBuilder::Init(PHCompositeNode* topNode) {
  * MyRawClusterBuilder::process_event(...)                        *
  * ------------------------------------------------------------ */
 int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
-    //_iEvent++;
     namespace IAlgorithm = IslandAlgorithm;
     string nodeName;
     towerIDs.clear();
@@ -177,6 +176,7 @@ void MyRawClusterBuilder::_FillTowerTree(std::list<RTHelper> allTowers) {
                 tower.getBinPhi(), 
                 tower.getMaxEtaBin(), 
                 tower.getMaxPhiBin(), 
+                allTowers->size(), 
                 _iEvent);
 
     }

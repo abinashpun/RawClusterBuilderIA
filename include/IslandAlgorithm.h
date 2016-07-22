@@ -92,7 +92,6 @@ namespace IslandAlgorithm {
         return seedTowers;
     }
 
-    /*
     // Make 5x5 clusters centered on each seed. 
     TowerMap GetSimpleClusters(std::list<RTHelper> seedTowers, 
                                 RTContainer*        _towers, 
@@ -147,7 +146,6 @@ namespace IslandAlgorithm {
         }
         return NULL;
     }
-    */
 
     /* ------------------------------------------------------------------------------------------ *
        2.   Starting from the most energetic seed, the algorithm collects crystals belonging to 
