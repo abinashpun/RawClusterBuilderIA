@@ -7,8 +7,6 @@
 #include <g4cemc/RawTowerContainer.h>
 #include <g4cemc/RawTowerGeomContainer.h>
 
-#ifndef EATSHIT
-#define EATSHIT
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
