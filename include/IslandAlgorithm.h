@@ -18,10 +18,10 @@
 #ifndef __MYRAWCLUSTERBUILDER_H__
 typedef RawTowerContainer               RTContainer;
 typedef RawTowerGeomContainer           RTGeomContainer;
+#endif
 typedef std::multimap<int, TowerHelper>    TowerMap;
 typedef std::pair<const int, TowerHelper>  TowerPair;
 typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
-#endif
 
 namespace IslandAlgorithm {
     using std::cout;

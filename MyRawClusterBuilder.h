@@ -26,11 +26,10 @@ class TowerHelper;
 
 typedef RawTowerContainer       RTContainer;
 typedef RawTowerGeomContainer   RTGeomContainer;
-
-typedef std::multimap<int, TowerHelper>             TowerMap;
-typedef std::pair<const int, TowerHelper>           TowerPair;
-typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
-
+// Commenting these out before pull request. Appears that sPHENIX has similarly named typedefs. 
+//typedef std::multimap<int, TowerHelper>             TowerMap;
+//typedef std::pair<const int, TowerHelper>           TowerPair;
+//typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
 class MyRawClusterBuilder : public SubsysReco {
     public:
@@ -39,43 +38,26 @@ class MyRawClusterBuilder : public SubsysReco {
         int Init(PHCompositeNode *topNode);
         int process_event(PHCompositeNode *topNode);
         int End(PHCompositeNode *topNode);
-        void Detector(const std::string &d)              { _detector = d; }
+        void Detector(const std::string &d)         { _detector = d; }
         void set_threshold_energy(const float e)    { _min_tower_e = e; }
         void checkenergy(const int i = 1)           { _checkEnergyConserv = i; }
         void SetGenPT(float pt)                     { _genPT = pt; }
-        void SetParticleType(std::string s)              { _particleType = s; }
+        void SetParticleType(std::string s)         { _particleType = s; }
         void SetEvent(int i)                        { _iEvent = i; }
         void ClusterSimple(bool b)                  { _clusterSimple = b; }
     private:
-        // Variables initialized in constructor list.
-        RawClusterContainer*_clusters;
-        float       _min_tower_e;
-        int         _checkEnergyConserv;
-        bool        _clusterSimple;
-        std::string      _fileName;
-        std::string      _detector;
+        // Variables in constructor initializer list.
+        RawClusterContainer* _clusters;     // default = NULL
+        float   _min_tower_e;               // default = 0.0
+        int     _checkEnergyConserv;        // default = 0
+        bool    _clusterSimple;             // default = false
+        std::string _detector;              // default = "NONE"
 
-        int         _iEvent;
-        // Other sPHENIX private variables.
+        // Other sPHENIX-type private variables.
         RTContainer*        _towers;
         RTGeomContainer*    _towerGeom;
 
-        std::string  _particleType;
-
-        // ROOT I/O Objects. 
-        TFile*   _file;
-        TNtuple* ntp_tower;
-        TTree* _tCluster;
-        std::vector<int> towerIDs;
-        int     _clusterID;
-        float   _genPT;
-        float   _f_energy;
-        float   _f_ET;
-        float   _f_eta;
-        float   _f_phi;
-        int     _nClusters;
-        int     _nTowers;
-
+        // Containers for cluster vars. 
         std::vector<float>  _energyVec; 
         std::vector<float>  _ETVec; 
         std::vector<float>  _etaVec; 
@@ -83,20 +65,41 @@ class MyRawClusterBuilder : public SubsysReco {
 
         // Private helper methods. 
         void _AssignClusterValues(int iCluster);
-        void _PrintCluster(TowerPair);
         void _CheckEnergyConservation();
-        void _FillClustersEnergy(TowerMap);
-        void _FillClustersEta(TowerMap);
-        void _FillClustersPhi(TowerMap);
-        std::list<TowerHelper> _GetAllTowers();
-        void _InsertTower(std::list<TowerHelper>&, RawTowerPair);
         bool _CorrectPhi(RawCluster*);
         void _CreateNewCluster(RawCluster**);
-        void _ShowTreeEntries();
+        void _CreateNodes(PHCompositeNode *topNode);
+        void _FillClustersEnergy(std::multimap<int, TowerHelper>);
+        void _FillClustersEta(std::multimap<int, TowerHelper>);
+        void _FillClustersPhi(std::multimap<int, TowerHelper>);
+        std::list<TowerHelper> _GetAllTowers();
+        void _InsertTower(std::list<TowerHelper>&, std::pair<const unsigned, RawTower*>);
+        int  _NodeError(std::string nodeName, int retCode);
+        void _PrintCluster(std::pair<const int, TowerHelper>);
+
+        // _____ ROOT I/O Objects. (Temporary) _____
+        std::string  _particleType; // for distinguishing single-events from particle gun.
+        std::string _fileName;
+        TFile*   _file;
+        TNtuple* ntp_tower;
+
+        // Cluster tree with (in order) branch variables.
+        TTree* _tCluster;
+        std::vector<int> _towerIDs;
+        int     _iEvent;
+        int     _clusterID;
+        float   _genPT;
+        float   _energy;
+        float   _ET;
+        float   _eta;
+        float   _phi;
+        int     _nClusters;
+        int     _nTowers;
+
         void _FillTowerTree(std::list<TowerHelper>);
         void _FillClusterTree();
-        int  _NodeError(std::string nodeName, int retCode);
-        void _CreateNodes(PHCompositeNode *topNode);
+        void _ShowTreeEntries();
+
 };
 
 #endif
