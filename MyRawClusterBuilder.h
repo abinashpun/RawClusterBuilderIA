@@ -9,41 +9,26 @@
 #include <list>
 // Fun4All/PHENIX includes.
 #include <fun4all/SubsysReco.h>
-#include <fun4all/Fun4AllReturnCodes.h>
-#include <phool/PHCompositeNode.h>
-#include <phool/getClass.h>
-// Local includes.
-#include "g4cemc/RawTower.h"
-#include "g4cemc/RawTowerGeomContainer.h"
-#include "g4cemc/RawTowerContainer.h"
-#include "g4cemc/RawCluster.h"
-#include "include/RawClusterv1.h"
-#include "g4cemc/RawClusterContainer.h"
 // ROOT Includes.
 #include "TFile.h"
 #include "TTree.h"
 #include "TNtuple.h"
 #include "TROOT.h"
 
-using std::cout;
-using std::endl;
-using std::string;
-
-const string PATH = "~/bmckinz/MyRawClusterBuilder/rootFiles/";
-
 // Forward class declarations.
+class RawTower;
 class PHCompositeNode;
 class RawCluster;
 class RawClusterContainer;
 class RawTowerContainer;
 class RawTowerGeomContainer;
-class RTHelper;
+class TowerHelper;
 
 typedef RawTowerContainer       RTContainer;
 typedef RawTowerGeomContainer   RTGeomContainer;
 
-typedef std::multimap<int, RTHelper>             TowerMap;
-typedef std::pair<const int, RTHelper>           TowerPair;
+typedef std::multimap<int, TowerHelper>             TowerMap;
+typedef std::pair<const int, TowerHelper>           TowerPair;
 typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
 
@@ -54,27 +39,28 @@ class MyRawClusterBuilder : public SubsysReco {
         int Init(PHCompositeNode *topNode);
         int process_event(PHCompositeNode *topNode);
         int End(PHCompositeNode *topNode);
-        void Detector(const string &d)              { detector = d; }
+        void Detector(const std::string &d)              { _detector = d; }
         void set_threshold_energy(const float e)    { _min_tower_e = e; }
-        void checkenergy(const int i = 1)           { chkenergyconservation = i; }
+        void checkenergy(const int i = 1)           { _checkEnergyConserv = i; }
         void SetGenPT(float pt)                     { _genPT = pt; }
-        void SetParticleType(string s)              { _particleType = s; }
+        void SetParticleType(std::string s)              { _particleType = s; }
         void SetEvent(int i)                        { _iEvent = i; }
         void ClusterSimple(bool b)                  { _clusterSimple = b; }
     private:
         // Variables initialized in constructor list.
         RawClusterContainer*_clusters;
         float       _min_tower_e;
-        int         chkenergyconservation;
+        int         _checkEnergyConserv;
         bool        _clusterSimple;
-        string      detector;
+        std::string      _fileName;
+        std::string      _detector;
 
         int         _iEvent;
         // Other sPHENIX private variables.
         RTContainer*        _towers;
         RTGeomContainer*    _towerGeom;
 
-        string  _particleType;
+        std::string  _particleType;
 
         // ROOT I/O Objects. 
         TFile*   _file;
@@ -102,14 +88,14 @@ class MyRawClusterBuilder : public SubsysReco {
         void _FillClustersEnergy(TowerMap);
         void _FillClustersEta(TowerMap);
         void _FillClustersPhi(TowerMap);
-        std::list<RTHelper> _GetAllTowers();
-        void _InsertTower(std::list<RTHelper>&, RawTowerPair);
+        std::list<TowerHelper> _GetAllTowers();
+        void _InsertTower(std::list<TowerHelper>&, RawTowerPair);
         bool _CorrectPhi(RawCluster*);
         void _CreateNewCluster(RawCluster**);
         void _ShowTreeEntries();
-        void _FillTowerTree(std::list<RTHelper>);
+        void _FillTowerTree(std::list<TowerHelper>);
         void _FillClusterTree();
-        int  _NodeError(string nodeName, int retCode);
+        int  _NodeError(std::string nodeName, int retCode);
         void _CreateNodes(PHCompositeNode *topNode);
 };
 
