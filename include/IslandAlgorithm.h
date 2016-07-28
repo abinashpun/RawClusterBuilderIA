@@ -10,7 +10,6 @@
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
-#endif
 #include "TowerHelper.h"
 
 #ifndef __MYRAWCLUSTERBUILDER_H__
