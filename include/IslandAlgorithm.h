@@ -47,8 +47,8 @@ namespace IslandAlgorithm {
                     TowerMap&   clusteredTowers, RTGeomContainer*   _towerGeom);
 
     // Advance phi/eta depending on current location.
-    int _movePhi(std::string direction, int& currBinPhi);
-    int _moveEta(std::string direction, int& currBinEta);
+    int _movePhi(std::string direction, int& currBinPhi, RTGeomContainer* _towerGeom);
+    int _moveEta(std::string direction, int& currBinEta, RTGeomContainer* _towerGeom);
     // Comparators for sorting.
     bool lessEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2);
     bool moreEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2);
@@ -68,7 +68,7 @@ namespace IslandAlgorithm {
             if (rawTowerPair.second->get_energy() > _threshold) {
                 IslandAlgorithmTower towerHelper(rawTowerPair.second);
                 towerHelper.setID(rawTowerPair.first);
-                towerHelper.setCenter(_towerGeom);
+                towerHelper.setGeomInfo(_towerGeom);
                 seedTowers.push_back(towerHelper);
             }
         }
@@ -124,7 +124,7 @@ namespace IslandAlgorithm {
                     RawTower* rawTower = _towers->getTower(binEta, binPhi);
                     if (rawTower) {
                         IslandAlgorithmTower towerHelper(rawTower);
-                        towerHelper.setCenter(_towerGeom);
+                        towerHelper.setGeomInfo(_towerGeom);
                         clusteredTowers.insert(std::make_pair(clusterID, towerHelper));
                     }
                 }
@@ -176,12 +176,12 @@ namespace IslandAlgorithm {
         int currBinEta   = currentTower.getBinEta();
 
         // Get next tower info to decide if we should add it.
-        RawTower* nextTower = _towers->getTower(currBinEta, _movePhi(direction, currBinPhi));
+        RawTower* nextTower = _towers->getTower(currBinEta, _movePhi(direction, currBinPhi, _towerGeom));
 
         // Keep doing this until energy increase or hole.
         if (nextTower && currEnergy > nextTower->get_energy()) {
             IslandAlgorithmTower towerHelper(nextTower);
-            towerHelper.setCenter(_towerGeom);
+            towerHelper.setGeomInfo(_towerGeom);
             clusteredTowers.insert(std::make_pair(clusterID, towerHelper));
             _PrintTowerMsg(towerHelper, clusteredTowers.size(), "PHI");
             _SearchPhi(direction, towerHelper, clusterID, _towers, clusteredTowers, _towerGeom);
@@ -201,11 +201,11 @@ namespace IslandAlgorithm {
         int currBinPhi   = currentTower.getBinPhi();
         float currEnergy = currentTower.getEnergy();
 
-        if (_moveEta(direction, currBinEta) != -1) {
+        if (_moveEta(direction, currBinEta, _towerGeom) != -1) {
             RawTower* nextTower = _towers->getTower(currBinEta, currBinPhi);
             if (nextTower && currEnergy > nextTower->get_energy()) {
                 IslandAlgorithmTower towerHelper(nextTower);
-                towerHelper.setCenter(_towerGeom);
+                towerHelper.setGeomInfo(_towerGeom);
                 clusteredTowers.insert(std::make_pair(clusterID, towerHelper));
                 _PrintTowerMsg(towerHelper, clusteredTowers.size(), "ETA");
                 _SearchPhi("north", towerHelper, clusterID, _towers, clusteredTowers, _towerGeom);
@@ -215,16 +215,16 @@ namespace IslandAlgorithm {
         }
     }
 
-    int _movePhi(std::string direction, int& currBinPhi) { 
-        if (direction == "north")       currBinPhi = (currBinPhi != IslandAlgorithmTower::getMaxPhiBin()) ? currBinPhi+1 : 1;
+    int _movePhi(std::string direction, int& currBinPhi, RTGeomContainer* _towerGeom) { 
+        if (direction == "north")       currBinPhi = (currBinPhi != _towerGeom->get_phibins()) ? currBinPhi+1 : 1;
         else if (direction == "south")  currBinPhi = (currBinPhi != 1) ? currBinPhi-1 :
-            IslandAlgorithmTower::getMaxPhiBin();
+            _towerGeom->get_phibins();
         return currBinPhi;
     }
 
-    int _moveEta(std::string direction, int& currBinEta) { 
+    int _moveEta(std::string direction, int& currBinEta, RTGeomContainer* _towerGeom) { 
         if (direction == "west")        currBinEta = (currBinEta != 1) ? currBinEta-1 : -1;
-        else if (direction == "east")   currBinEta = (currBinEta != IslandAlgorithmTower::getMaxEtaBin()) ? currBinEta+1 : -1;
+        else if (direction == "east")   currBinEta = (currBinEta != _towerGeom->get_etabins()) ? currBinEta+1 : -1;
         return currBinEta;
     }
 

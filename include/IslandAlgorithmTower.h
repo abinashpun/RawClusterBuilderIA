@@ -18,6 +18,8 @@ class IslandAlgorithmTower {
         int getID() const                       { return id; }
         int getBinEta() const                   { return bineta; }
         int getBinPhi() const                   { return binphi; }
+        int getMaxPhiBin()                      { return maxPhiBin; }
+        int getMaxEtaBin()                      { return maxEtaBin; }
         float getET() const                     { return energy / std::cosh(etaCenter);}
         float getEnergy() const                 { return energy; }
         float getEtaCenter() const              { return etaCenter; }
@@ -26,11 +28,9 @@ class IslandAlgorithmTower {
         void setEnergy(float e)                 { energy = e; }
         void setEtaCenter(float eta)            { etaCenter = eta; }
         void setPhiCenter(float phi)            { phiCenter = phi; }
-        void setCenter(RawTowerGeomContainer*);
-        static int getMaxPhiBin()               { return maxPhiBin; }
-        static int getMaxEtaBin()               { return maxEtaBin; }
-        static void setMaxPhiBin(const int i)   { maxPhiBin = i; }
-        static void setMaxEtaBin(const int i)   { maxEtaBin = i; }
+        void setMaxPhiBin(const int i)          { maxPhiBin = i; }
+        void setMaxEtaBin(const int i)          { maxEtaBin = i; }
+        void setGeomInfo(RawTowerGeomContainer* towerGeom);
         static RawTower* GetRawTower(IslandAlgorithmTower, RawTowerContainer*);
     protected:
         RawTowerDefs::keytype id;
@@ -39,16 +39,24 @@ class IslandAlgorithmTower {
         float energy;
         float etaCenter; 
         float phiCenter;
-        static int maxPhiBin;
-        static int maxEtaBin;
+        int maxPhiBin;
+        int maxEtaBin;
         static void ExitOnIDMismatch(int id1, int id2);
 };
-int IslandAlgorithmTower::maxPhiBin = -10;
-int IslandAlgorithmTower::maxEtaBin = -10;
 
-void IslandAlgorithmTower::setCenter(RawTowerGeomContainer* towerGeom) {
-    etaCenter = towerGeom->get_etacenter(bineta);
-    phiCenter = towerGeom->get_phicenter(binphi);
+// Provide option to set private variables related to geom all at once.
+void IslandAlgorithmTower::setGeomInfo(RawTowerGeomContainer* towerGeom) {
+    if (!bineta || !binphi) {
+        std::cout << __PRETTY_FUNCTION__ 
+             << " - WARNING: You didn't set bineta, binphi for this tower."
+             << " Skipping function call..." 
+             << std::endl;
+        return;
+    }
+    setEtaCenter(towerGeom->get_etacenter(bineta));
+    setPhiCenter(towerGeom->get_phicenter(binphi));
+    setMaxEtaBin(towerGeom->get_etabins());
+    setMaxPhiBin(towerGeom->get_phibins());
 }
 
 /* ----------------------------------------
@@ -87,6 +95,7 @@ bool operator==(const IslandAlgorithmTower& a, const IslandAlgorithmTower& b) {
     return a.getID() == b.getID();
 }
 
+// TODO: Where did I use this previously? Doesn't appear to be used anymore. 
 RawTower* IslandAlgorithmTower::GetRawTower(IslandAlgorithmTower towerHelper, RawTowerContainer* towers) {
     int iPhi = towerHelper.getBinPhi();
     int iEta = towerHelper.getBinEta();

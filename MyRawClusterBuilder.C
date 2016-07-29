@@ -103,8 +103,8 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     if (!_towerGeom) return _NodeError(nodeName, Fun4AllReturnCodes::ABORTEVENT);
 
     // Store the number of bins in phi as a static value; No need to repeatedly set.
-    IslandAlgorithmTower::setMaxPhiBin(_towerGeom->get_phibins());
-    IslandAlgorithmTower::setMaxEtaBin(_towerGeom->get_etabins());
+    //IslandAlgorithmTower::setMaxPhiBin(_towerGeom->get_phibins());
+    //IslandAlgorithmTower::setMaxEtaBin(_towerGeom->get_etabins());
 
     // ------------------------------------------------------------------------------------------
     // The Island Algorithm:
@@ -188,7 +188,7 @@ std::list<IslandAlgorithmTower> MyRawClusterBuilder::_GetAllTowers() {
 // Given iterator to a seed tower, place relevant info into std::vector of seed towers.
 void MyRawClusterBuilder::_InsertTower(std::list<IslandAlgorithmTower>&  towerList, RawTowerPair towerPair)  {
     IslandAlgorithmTower rtHelper(towerPair.second);
-    rtHelper.setCenter(_towerGeom);
+    rtHelper.setGeomInfo(_towerGeom);
     towerList.push_back(rtHelper);
 }
 
