@@ -22,13 +22,13 @@ class RawCluster;
 class RawClusterContainer;
 class RawTowerContainer;
 class RawTowerGeomContainer;
-class TowerHelper;
+class IslandAlgorithmTower;
 
 typedef RawTowerContainer       RTContainer;
 typedef RawTowerGeomContainer   RTGeomContainer;
 // Commenting these out before pull request. Appears that sPHENIX has similarly named typedefs. 
-//typedef std::multimap<int, TowerHelper>             TowerMap;
-//typedef std::pair<const int, TowerHelper>           TowerPair;
+//typedef std::multimap<int, IslandAlgorithmTower>             TowerMap;
+//typedef std::pair<const int, IslandAlgorithmTower>           TowerPair;
 //typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
 class MyRawClusterBuilder : public SubsysReco {
@@ -69,13 +69,13 @@ class MyRawClusterBuilder : public SubsysReco {
         bool _CorrectPhi(RawCluster*);
         void _CreateNewCluster(RawCluster**);
         void _CreateNodes(PHCompositeNode *topNode);
-        void _FillClustersEnergy(std::multimap<int, TowerHelper>);
-        void _FillClustersEta(std::multimap<int, TowerHelper>);
-        void _FillClustersPhi(std::multimap<int, TowerHelper>);
-        std::list<TowerHelper> _GetAllTowers();
-        void _InsertTower(std::list<TowerHelper>&, std::pair<const unsigned, RawTower*>);
+        void _FillClustersEnergy(std::multimap<int, IslandAlgorithmTower>);
+        void _FillClustersEta(std::multimap<int, IslandAlgorithmTower>);
+        void _FillClustersPhi(std::multimap<int, IslandAlgorithmTower>);
+        std::list<IslandAlgorithmTower> _GetAllTowers();
+        void _InsertTower(std::list<IslandAlgorithmTower>&, std::pair<const unsigned, RawTower*>);
         int  _NodeError(std::string nodeName, int retCode);
-        void _PrintCluster(std::pair<const int, TowerHelper>);
+        void _PrintCluster(std::pair<const int, IslandAlgorithmTower>);
 
         // _____ ROOT I/O Objects. (Temporary) _____
         std::string  _particleType; // for distinguishing single-events from particle gun.
@@ -96,7 +96,8 @@ class MyRawClusterBuilder : public SubsysReco {
         int     _nClusters;
         int     _nTowers;
 
-        void _FillTowerTree(std::list<TowerHelper>);
+        void _FillTowerTree(std::list<IslandAlgorithmTower>);
+        void _FillTowerTree(std::multimap<int,IslandAlgorithmTower>);
         void _FillClusterTree();
         void _ShowTreeEntries();
 

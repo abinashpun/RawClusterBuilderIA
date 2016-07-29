@@ -2,7 +2,7 @@
 
 // User-defined includes (and boost).
 #include "IslandAlgorithm.h" // Use this instead of PHMakeGroups.h
-#include "TowerHelper.h"
+#include "IslandAlgorithmTower.h"
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
@@ -18,8 +18,8 @@
 #include "g4cemc/RawClusterContainer.h"
 
 const std::string PATH = "~/bmckinz/MyRawClusterBuilder/rootFiles/";
-typedef std::multimap<int, TowerHelper>             TowerMap;
-typedef std::pair<const int, TowerHelper>           TowerPair;
+typedef std::multimap<int, IslandAlgorithmTower>             TowerMap;
+typedef std::pair<const int, IslandAlgorithmTower>           TowerPair;
 typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
 /* ------------------------------------------------------ *
@@ -57,7 +57,7 @@ int MyRawClusterBuilder::Init(PHCompositeNode* topNode) {
     gROOT->ProcessLine("#include <vector>");
 
     std::string varList;
-    varList     = "id:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi:nAllTowers:iEvent";
+    varList     = "iEvent:towerID:clusterID:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi";
     ntp_tower   = new TNtuple("ntp_tower", "tower values", varList.data());
 
     _tCluster = new TTree("tCluster", "cluster tree");
@@ -103,15 +103,15 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     if (!_towerGeom) return _NodeError(nodeName, Fun4AllReturnCodes::ABORTEVENT);
 
     // Store the number of bins in phi as a static value; No need to repeatedly set.
-    TowerHelper::setMaxPhiBin(_towerGeom->get_phibins());
-    TowerHelper::setMaxEtaBin(_towerGeom->get_etabins());
+    IslandAlgorithmTower::setMaxPhiBin(_towerGeom->get_phibins());
+    IslandAlgorithmTower::setMaxEtaBin(_towerGeom->get_etabins());
 
     // ------------------------------------------------------------------------------------------
     // The Island Algorithm:
 
     set_threshold_energy(0.1);
     // 1. Construct list of seed towers, defined as having energy above some threshold. 
-    std::list<TowerHelper> seedTowers     = IAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
+    std::list<IslandAlgorithmTower> seedTowers     = IAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
     // 2. Cluster the towers via searching method along eta and phi from each seed.
     TowerMap clusteredTowers;
     if (_clusterSimple) clusteredTowers = IAlgorithm::GetSimpleClusters(seedTowers, _towers, _towerGeom);
@@ -142,7 +142,8 @@ int MyRawClusterBuilder::process_event(PHCompositeNode *topNode) {
     }
 
     // Handle ROOT I/O. 
-    _FillTowerTree(_GetAllTowers());
+    //_FillTowerTree(_GetAllTowers());
+    _FillTowerTree(clusteredTowers);
     _FillClusterTree();
 
     if (_checkEnergyConserv) _CheckEnergyConservation();
@@ -175,34 +176,34 @@ void MyRawClusterBuilder::_AssignClusterValues(int iCluster) {
     }
 }
 
-// Return list of all RawTower pairs in _towers->getTowers() converted to TowerHelpers.
-std::list<TowerHelper> MyRawClusterBuilder::_GetAllTowers() {
-    std::list<TowerHelper> allTowers;
+// Return list of all RawTower pairs in _towers->getTowers() converted to IslandAlgorithmTowers.
+std::list<IslandAlgorithmTower> MyRawClusterBuilder::_GetAllTowers() {
+    std::list<IslandAlgorithmTower> allTowers;
     foreach (RawTowerPair& towerPair, _towers->getTowers()) {
         // TODO : change order of arguments. 
         _InsertTower(allTowers, towerPair);
     }
     return allTowers;
 }
-
 // Given iterator to a seed tower, place relevant info into std::vector of seed towers.
-void MyRawClusterBuilder::_InsertTower(std::list<TowerHelper>&  towerList, RawTowerPair towerPair)  {
-    TowerHelper rtHelper(towerPair.second);
+void MyRawClusterBuilder::_InsertTower(std::list<IslandAlgorithmTower>&  towerList, RawTowerPair towerPair)  {
+    IslandAlgorithmTower rtHelper(towerPair.second);
     rtHelper.setCenter(_towerGeom);
     towerList.push_back(rtHelper);
 }
 
 void MyRawClusterBuilder::_FillClustersEnergy(TowerMap clusteredTowers) {
     foreach (TowerPair& towerPair, clusteredTowers) {
-        TowerHelper tower = towerPair.second;
+        IslandAlgorithmTower tower = towerPair.second;
         _energyVec[towerPair.first] += tower.getEnergy();  
         _ETVec[towerPair.first]     += tower.getET();
     }
 }
 
+
 void MyRawClusterBuilder::_FillClustersEta(TowerMap clusteredTowers) {
     foreach (TowerPair& towerPair, clusteredTowers) {
-        TowerHelper tower = towerPair.second;
+        IslandAlgorithmTower tower = towerPair.second;
         _etaVec[towerPair.first] += tower.getET() * tower.getEtaCenter();
     }
     for (unsigned i = 0; i < _clusters->size(); i++) {
@@ -212,7 +213,7 @@ void MyRawClusterBuilder::_FillClustersEta(TowerMap clusteredTowers) {
 
 void MyRawClusterBuilder::_FillClustersPhi(TowerMap clusteredTowers) {
     foreach (TowerPair& towerPair, clusteredTowers) {
-        TowerHelper tower = towerPair.second;
+        IslandAlgorithmTower tower = towerPair.second;
         _phiVec[towerPair.first] += tower.getET() * tower.getPhiCenter();
     }
     // First, get all constitutent tower phi's as an energy-weighted sum.
@@ -343,8 +344,28 @@ void MyRawClusterBuilder::_ShowTreeEntries() {
     } 
 }
 
-void MyRawClusterBuilder::_FillTowerTree(std::list<TowerHelper> allTowers) {
-    foreach (TowerHelper& tower, allTowers) {
+void MyRawClusterBuilder::_FillTowerTree(TowerMap clusteredTowers) {
+    foreach (TowerPair& towerPair, clusteredTowers) {
+        int clusterID = towerPair.first;
+        IslandAlgorithmTower tower = towerPair.second;
+        ntp_tower->Fill(
+                _iEvent,
+                tower.getID(), 
+                clusterID, 
+                tower.getEnergy(), 
+                tower.getET(),
+                tower.getEtaCenter(), 
+                tower.getPhiCenter(), 
+                tower.getBinEta(), 
+                tower.getBinPhi(), 
+                tower.getMaxEtaBin(), 
+                tower.getMaxPhiBin());
+    }
+}
+
+
+void MyRawClusterBuilder::_FillTowerTree(std::list<IslandAlgorithmTower> allTowers) {
+    foreach (IslandAlgorithmTower& tower, allTowers) {
         ntp_tower->Fill(
                 tower.getID(), 
                 tower.getEnergy(), 
