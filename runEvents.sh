@@ -28,7 +28,7 @@ cd -;
 
 # Combine root files 
 # and place the leftover individual files in their own folder.
-cd ~/bmckinz/MyRawClusterBuilder/rootFiles
+cd ~/bmckinz/RawClusterBuilderIA/rootFiles
 TARGET=rcb_${PARTICLE}.root
 if [ -f $TARGET ]; then
     echo "Removing existing $TARGET . . . "

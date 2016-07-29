@@ -1,5 +1,5 @@
-#ifndef __MYRAWCLUSTERBUILDER_H__
-#define __MYRAWCLUSTERBUILDER_H__
+#ifndef __RawClusterBuilderIA_H__
+#define __RawClusterBuilderIA_H__
 
 // C++ includes.
 #include <iostream>
@@ -31,10 +31,10 @@ typedef RawTowerGeomContainer   RTGeomContainer;
 //typedef std::pair<const int, IslandAlgorithmTower>           TowerPair;
 //typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
-class MyRawClusterBuilder : public SubsysReco {
+class RawClusterBuilderIA : public SubsysReco {
     public:
-        MyRawClusterBuilder(const std::string& name = "MyRawClusterBuilder"); 
-        virtual ~MyRawClusterBuilder() {}
+        RawClusterBuilderIA(const std::string& name = "RawClusterBuilderIA"); 
+        virtual ~RawClusterBuilderIA() {}
         int Init(PHCompositeNode *topNode);
         int process_event(PHCompositeNode *topNode);
         int End(PHCompositeNode *topNode);

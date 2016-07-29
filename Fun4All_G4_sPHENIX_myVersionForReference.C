@@ -43,7 +43,7 @@ int Fun4All_G4_sPHENIX( const int nEvents = 10,
     gSystem->Load("libg4hough.so");
     gSystem->Load("libcemc.so");
     gSystem->Load("libg4eval.so");
-    gSystem->Load("libMyRawClusterBuilder.so");
+    gSystem->Load("libRawClusterBuilderIA.so");
     //gSystem->Load("libMyCaloEvaluator.so");
 
     // establish the geometry and reconstruction setup
@@ -132,7 +132,7 @@ int Fun4All_G4_sPHENIX( const int nEvents = 10,
     }  
 
     string particleString = particleType;
-    MyRawClusterBuilder* ClusterBuilder = new MyRawClusterBuilder("EmcRawClusterBuilder");
+    RawClusterBuilderIA* ClusterBuilder = new RawClusterBuilderIA("EmcRawClusterBuilder");
     ClusterBuilder->Detector("CEMC");
     ClusterBuilder->SetGenPT(genEnergy);
     ClusterBuilder->SetParticleType(particleString);

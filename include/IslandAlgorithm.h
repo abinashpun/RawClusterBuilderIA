@@ -12,7 +12,7 @@
 #define foreach BOOST_FOREACH
 #include "IslandAlgorithmTower.h"
 
-#ifndef __MYRAWCLUSTERBUILDER_H__
+#ifndef __RawClusterBuilderIA_H__
 typedef RawTowerContainer               RTContainer;
 typedef RawTowerGeomContainer           RTGeomContainer;
 #endif

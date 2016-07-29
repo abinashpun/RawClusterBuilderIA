@@ -34,12 +34,14 @@ fi
 #               command line is build by appending each selected file name at the end.
 echo "Executing global search and replace: ${OLDNAME} --> ${NEWNAME}"
 find . ! -name '*rename_files.sh*' -type f -exec sed -i "s/${OLDNAME}/${NEWNAME}/Ig" {} +
+echo "Finished global search and replace . . . "
 if grep -iq --exclude="rename_files.sh" "${OLDNAME}" **; then
     echo "Error: Found occurrence of ${OLDNAME} after search and replace. Terminating."
     exit
 fi
 
 # Only for files with the OLDNAME prefix. 
+echo "Beginning loop over all file names . . . "
 for file in *${OLDNAME}*; do
     if [ file == "rename_files.sh" ]; then 
         echo "woops lulz"
