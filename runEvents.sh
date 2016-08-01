@@ -1,5 +1,10 @@
 #!/bin/bash
 
+PREFIX="simple_rcb"
+ptRange=$(awk 'BEGIN{for(i=5;i<=60;i+=0.1)print i}')
+threshRange=$(awk 'BEGIN{for(j=0.1;j<=0.3;j+=0.1)print j}')
+
+echo "Simulating $PARTICLE events."
 # Require that user specify particle type. 
 if [ $# -eq 0 ]; then 
     echo "Error: didn't specify EMinus, Gamma, or Pi0. Exiting."
@@ -13,13 +18,10 @@ fi
 
 # Store desired simulated particle type.
 PARTICLE="$1"
-echo "Simulating $PARTICLE events."
-#
+ 
 # Run single-particle events for genPT from 5 - 60GeV. 
 cd ~/macros/g4simulations;
 EVENT_NUM=0
-ptRange=$(awk 'BEGIN{for(i=5;i<=60;i+=0.2)print i}')
-threshRange=$(awk 'BEGIN{for(j=0.05;j<=0.3;j+=0.05)print j}')
 for seedThresh in $threshRange; do
 
     EVENT_NUM=0
@@ -33,19 +35,24 @@ for seedThresh in $threshRange; do
     # Combine root files 
     # and place the leftover individual files in their own folder.
     cd ~/bmckinz/RawClusterBuilderIA/rootFiles
-    TARGET=rcb_${PARTICLE}.root
-    #if [ -f $TARGET ]; then
-        #echo "Removing existing $TARGET . . . "
-        #rm $TARGET
-    #fi
-    hadd rcb_${seedThresh}_${PARTICLE}.root *${PARTICLE}_*
+    TARGET=${PREFIX}_${seedThresh}_${PARTICLE}.root
+    if [ -f $TARGET ]; then
+        echo "Removing existing $TARGET . . . "
+        rm $TARGET
+    fi
+    hadd ${TARGET} *${PARTICLE}_*
     mv *${PARTICLE}_* $PARTICLE/
     cd -
 
 done
 
 cd ~/bmckinz/RawClusterBuilderIA/rootFiles
-hadd rcb${PARTICLE}.root *_${PARTICLE}.root
+TARGET=${PREFIX}${PARTICLE}.root
+if [ -f $TARGET ]; then
+    echo "Removing existing $TARGET . . . "
+    rm $TARGET
+fi
+hadd ${TARGET} *_${PARTICLE}.root
 mv *_${PARTICLE}.root $PARTICLE/
 
 cd -;

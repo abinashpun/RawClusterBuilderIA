@@ -17,7 +17,7 @@
 #include "include/RawClusterv1.h"
 #include "g4cemc/RawClusterContainer.h"
 
-const std::string PATH = "~/bmckinz/RawClusterBuilderIA/rootFiles/";
+const std::string PATH = "~/bmckinz/RawClusterBuilderIA/rootFiles";
 typedef std::multimap<int, IslandAlgorithmTower>             TowerMap;
 typedef std::pair<const int, IslandAlgorithmTower>           TowerPair;
 typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
@@ -50,12 +50,14 @@ int RawClusterBuilderIA::Init(PHCompositeNode* topNode) {
 
     std::cout << " - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - "     << std::endl;
     std::cout << "[RawClusterBuilderIA::Init]\nPARTICLE TYPE IS " << _particleType   << std::endl;
+    std::cout << "CLUSTER SIMPLE: "     << std::boolalpha << (_clusterSimple == true) << std::endl;
     std::cout << "EVENT NUMBER: "     << _iEvent                                  << std::endl;
     std::cout << "SEED THRESHOLD: "   << _min_tower_e                             << std::endl;
     std::cout << "GEN PT: "           << _genPT                                   << std::endl;
     std::cout << " - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - "   << std::endl;
 
-    _fileName   = Form("%srcb_%s_%dGeV.root", PATH.c_str(), _particleType.c_str(), (int)(_genPT*10));
+    std::string prefix = _clusterSimple ? "simple_rcb" : "rcb";
+    _fileName   = Form("%s/%s_%s_%dGeV.root", PATH.c_str(), prefix.c_str(), _particleType.c_str(), (int)(_genPT*10));
     _file       = new TFile(_fileName.c_str(),"RECREATE"); 
     gROOT->ProcessLine("#include <vector>");
 
