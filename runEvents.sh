@@ -1,8 +1,8 @@
 #!/bin/bash
 
-PREFIX="simple_rcb"
-ptRange=$(awk 'BEGIN{for(i=5;i<=60;i+=0.1)print i}')
-threshRange=$(awk 'BEGIN{for(j=0.1;j<=0.3;j+=0.1)print j}')
+PREFIX="rcb"
+ptRange=$(awk 'BEGIN{for(i=5;i<=60;i+=0.5)print i}')
+threshRange=$(awk 'BEGIN{for(j=0.1;j<=0.1;j+=0.1)print j}')
 
 echo "Simulating $PARTICLE events."
 # Require that user specify particle type. 
@@ -12,7 +12,7 @@ if [ $# -eq 0 ]; then
 elif [ $# -eq 1 ] && [ "$1" == "test" ]; then 
     echo "Starting a test run . . . "
     cd ~/macros/g4simulations;
-    root -b -q "Fun4All_G4_sPHENIX.C(1, 10.0, 0.2, \"EMinus\", 0)"
+    root -b -q "Fun4All_G4_sPHENIX.C(1, 25.0, 0.1, \"Pi0\", 0)"
     exit
 fi
 

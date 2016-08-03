@@ -24,6 +24,10 @@ namespace IslandAlgorithm {
     using std::cout;
     using std::endl;
 
+    // Set of towerIDs to ensure towers only associated with one cluster.
+    std::set<int> usedTowerIDs;
+    int numDoubleCountsAvoided = 0; 
+
     // The two main workhorse functions of the island algorithm. 
     std::list<IslandAlgorithmTower> GetSeedTowers(RTContainer* _towers, 
                                       RTGeomContainer* _towerGeom, 
@@ -52,9 +56,12 @@ namespace IslandAlgorithm {
     // Comparators for sorting.
     bool lessEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2);
     bool moreEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2);
+    // Tell whether or not a tower has been assigned to a cluster this event.
+    bool _TowerAlreadyClustered(IslandAlgorithmTower towerHelper);
     // Basic print function for energy, etacenter, phicenter.
     void PrintSeeds(std::list<IslandAlgorithmTower>& seeds);
     void _PrintTowerMsg(IslandAlgorithmTower tower, int index, const char* phiOrEta);
+    void _PrintDebugMsg(IslandAlgorithmTower towerHelper);
 
     /* ------------------------------------------------------------------------------------------ *
        1.   The island algorithm starts by a search for seeds. Seeds are defined as                
@@ -148,11 +155,17 @@ namespace IslandAlgorithm {
                                 RTContainer*        _towers, 
                                 RTGeomContainer*    _towerGeom) {
 
+        // Initialize/declare required new objects.
         int clusterID = 0;
+        usedTowerIDs.clear();
         TowerMap clusteredTowers;
+        numDoubleCountsAvoided = 0; 
+
         foreach (IslandAlgorithmTower& seed, seedTowers) {
             // Begin by inserting the seed tower, which defines a cluster.
             clusteredTowers.insert(std::make_pair(clusterID, seed));
+            usedTowerIDs.insert(seed.getID());
+
             _PrintTowerMsg(seed, clusteredTowers.size(), "SEED");
             _SearchPhi("north", seed, clusterID, _towers, clusteredTowers, _towerGeom);
             _SearchPhi("south", seed, clusterID, _towers, clusteredTowers, _towerGeom);
@@ -160,6 +173,7 @@ namespace IslandAlgorithm {
             _SearchEta("east", seed, clusterID, _towers, clusteredTowers, _towerGeom);
             clusterID++;
         }
+
         return clusteredTowers;
     }
 
@@ -182,7 +196,13 @@ namespace IslandAlgorithm {
         if (nextTower && currEnergy > nextTower->get_energy()) {
             IslandAlgorithmTower towerHelper(nextTower);
             towerHelper.setGeomInfo(_towerGeom);
+
+            // Terminate search if encounter tower that has already been clustered.
+            if (_TowerAlreadyClustered(towerHelper)) return;
+            // Otherwise, mark it as clustered and insert it into the clusteredTowers map.
+            usedTowerIDs.insert(towerHelper.getID());
             clusteredTowers.insert(std::make_pair(clusterID, towerHelper));
+
             _PrintTowerMsg(towerHelper, clusteredTowers.size(), "PHI");
             _SearchPhi(direction, towerHelper, clusterID, _towers, clusteredTowers, _towerGeom);
         }
@@ -206,7 +226,13 @@ namespace IslandAlgorithm {
             if (nextTower && currEnergy > nextTower->get_energy()) {
                 IslandAlgorithmTower towerHelper(nextTower);
                 towerHelper.setGeomInfo(_towerGeom);
+
+                // Terminate search if encounter tower that has already been clustered.
+                if (_TowerAlreadyClustered(towerHelper)) return;
+                // Otherwise, mark it as clustered and insert it into the clusteredTowers map.
+                usedTowerIDs.insert(towerHelper.getID());
                 clusteredTowers.insert(std::make_pair(clusterID, towerHelper));
+
                 _PrintTowerMsg(towerHelper, clusteredTowers.size(), "ETA");
                 _SearchPhi("north", towerHelper, clusterID, _towers, clusteredTowers, _towerGeom);
                 _SearchPhi("south", towerHelper, clusterID, _towers, clusteredTowers, _towerGeom);
@@ -258,6 +284,20 @@ namespace IslandAlgorithm {
              << endl;
     }
 
+    bool _TowerAlreadyClustered(IslandAlgorithmTower towerHelper) {
+        bool res = (usedTowerIDs.find(towerHelper.getID()) != usedTowerIDs.end());
+        if (res) _PrintDebugMsg(towerHelper);
+        return res;
+    }
+
+    void _PrintDebugMsg(IslandAlgorithmTower towerHelper) {  
+        numDoubleCountsAvoided++;
+        cout << "\n ----------- DOUBLE-COUNT " << numDoubleCountsAvoided 
+             << " AVOIDED ----------- "  << endl
+             << "Tower ID:\t"   << towerHelper.getID()              << endl
+             << "Tower Eta:\t"  << towerHelper.getEtaCenter()       << endl
+             << "Tower Phi:\t"  << towerHelper.getPhiCenter()       << endl;
+    }
 }
 
 #endif
