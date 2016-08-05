@@ -48,18 +48,19 @@ int RawClusterBuilderIA::Init(PHCompositeNode* topNode) {
         throw;
     }
 
-    std::cout << " - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - "     << std::endl;
-    std::cout << "[RawClusterBuilderIA::Init]\nPARTICLE TYPE IS " << _particleType   << std::endl;
-    std::cout << "CLUSTER SIMPLE: "     << std::boolalpha << (_clusterSimple == true) << std::endl;
-    std::cout << "EVENT NUMBER: "     << _iEvent                                  << std::endl;
-    std::cout << "SEED THRESHOLD: "   << _min_tower_e                             << std::endl;
-    std::cout << "GEN PT: "           << _genPT                                   << std::endl;
-    std::cout << " - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - "   << std::endl;
+    std::cout << " - - - - - - - - - - - - - - - - - - - - - - -  - "   << std::endl;
+    std::cout << __PRETTY_FUNCTION__                                    << std::endl;
+    std::cout << "Particle type:\t" << _particleType                    << std::endl;
+    std::cout << "ClusterSimple:\t" << std::boolalpha << _clusterSimple << std::endl;
+    std::cout << "Event number:\t"  << _iEvent                          << std::endl;
+    std::cout << "Seed thresh:\t"   << _min_tower_e                     << std::endl;
+    std::cout << "Generated PT:\t"  << _genPT                           << std::endl;
+    std::cout << " - - - - - - - - - - - - - - - - - - - - - - -  - "   << std::endl;
 
     std::string prefix = _clusterSimple ? "simple_rcb" : "rcb";
     _fileName   = Form("%s/%s_%s_%dGeV.root", PATH.c_str(), prefix.c_str(), _particleType.c_str(), (int)(_genPT*10));
     _file       = new TFile(_fileName.c_str(),"RECREATE"); 
-    gROOT->ProcessLine("#include <vector>");
+    gROOT->ProcessLine("#include <vector>"); // not entirely sure why this is necessary.
 
     std::string varList;
     varList     = "iEvent:seedThresh:towerID:clusterID:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi";
@@ -90,6 +91,7 @@ int RawClusterBuilderIA::Init(PHCompositeNode* topNode) {
    5. Calculate cluster quantities (e.g. energy).
  * ------------------------------------------------------------ */
 int RawClusterBuilderIA::process_event(PHCompositeNode *topNode) {
+    std::cout << "Entering function: " << __PRETTY_FUNCTION__ << std::endl;
     namespace IAlgorithm = IslandAlgorithm;  
     _towerIDs.clear();
     _energyVec.clear();

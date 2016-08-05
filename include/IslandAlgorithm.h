@@ -13,12 +13,12 @@
 #include "IslandAlgorithmTower.h"
 
 #ifndef __RawClusterBuilderIA_H__
-typedef RawTowerContainer               RTContainer;
-typedef RawTowerGeomContainer           RTGeomContainer;
+typedef RawTowerContainer       RTContainer;
+typedef RawTowerGeomContainer   RTGeomContainer;
 #endif
+
 typedef std::multimap<int, IslandAlgorithmTower>    TowerMap;
 typedef std::pair<const int, IslandAlgorithmTower>  TowerPair;
-typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
 namespace IslandAlgorithm {
     using std::cout;
@@ -53,14 +53,17 @@ namespace IslandAlgorithm {
     // Advance phi/eta depending on current location.
     int _movePhi(std::string direction, int& currBinPhi, RTGeomContainer* _towerGeom);
     int _moveEta(std::string direction, int& currBinEta, RTGeomContainer* _towerGeom);
+
     // Comparators for sorting.
     bool lessEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2);
     bool moreEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2);
+
     // Tell whether or not a tower has been assigned to a cluster this event.
     bool _TowerAlreadyClustered(IslandAlgorithmTower towerHelper);
+
     // Basic print function for energy, etacenter, phicenter.
-    void PrintSeeds(std::list<IslandAlgorithmTower>& seeds);
-    void _PrintTowerMsg(IslandAlgorithmTower tower, int index, const char* phiOrEta);
+    void _PrintSeeds(std::list<IslandAlgorithmTower>& seeds);
+    void _PrintTowerMsg(IslandAlgorithmTower tower, int index, const char* towerType);
     void _PrintDebugMsg(IslandAlgorithmTower towerHelper);
 
     /* ------------------------------------------------------------------------------------------ *
@@ -68,6 +71,7 @@ namespace IslandAlgorithm {
             crystals with an energy above a certain threshold on transverse energy.                
      * ------------------------------------------------------------------------------------------ */
     std::list<IslandAlgorithmTower> GetSeedTowers(RTContainer* _towers, RTGeomContainer* _towerGeom, float _threshold) {
+        typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
         // Collect all towers above threshold.
         std::list<IslandAlgorithmTower> seedTowers;
@@ -83,7 +87,8 @@ namespace IslandAlgorithm {
         // Find towers with higher-energy adjacent towers.(aka bad seeds)
         std::set<IslandAlgorithmTower> badSeeds;
         seedTowers.sort(lessEnergy);
-        // Todo: this could _definitely_ be optimized. 
+        // Loop over seed towers in pairs. 
+        // If tower1 is found to be adjacent to higher-energy tower2, remove tower1.
         foreach (IslandAlgorithmTower& tower1, seedTowers) {
             foreach (IslandAlgorithmTower& tower2, seedTowers) {
                 if (tower1.isAdjacent(tower2) && tower1.getEnergy() < tower2.getEnergy()) {
@@ -94,13 +99,13 @@ namespace IslandAlgorithm {
 
         // Remove those seeds that are adjacent to higher energy ones.
         foreach (const IslandAlgorithmTower badSeed, badSeeds) {
+            cout << "Removing low-energy adj seed tower with ID =  " << badSeed.getID() << endl;
             seedTowers.remove(badSeed);
         }
 
         // Order from hi-to-lo energy.
         seedTowers.sort(moreEnergy);
-
-        PrintSeeds(seedTowers);
+        //_PrintSeeds(seedTowers);
         return seedTowers;
     }
 
@@ -112,17 +117,13 @@ namespace IslandAlgorithm {
         TowerMap clusteredTowers;
         int clusterID = 0;
         foreach (IslandAlgorithmTower& seed, seedTowers) {
-            clusteredTowers.insert(std::make_pair(clusterID, seed));
             _PrintTowerMsg(seed, clusteredTowers.size(), "SEED");
+            clusteredTowers.insert(std::make_pair(clusterID, seed));
             int currBinPhi   = seed.getBinPhi();
             int currBinEta   = seed.getBinEta();
 
-            std::vector<int> deltaBins;
-            deltaBins.push_back(2);
-            deltaBins.push_back(1);
-            deltaBins.push_back(0);
-            deltaBins.push_back(-1);
-            deltaBins.push_back(-2);
+            int deltaVals[] = {2, 1, 0, -1, -2};
+            std::vector<int> deltaBins (deltaVals, deltaVals + sizeof(deltaVals) / sizeof(int));
             foreach (int& deltaPhiBin, deltaBins) {
                 foreach (int& deltaEtaBin, deltaBins) {
                     int binPhi = currBinPhi + deltaPhiBin;
@@ -138,7 +139,6 @@ namespace IslandAlgorithm {
             }
             clusterID++;
         }
-
         return clusteredTowers;
     }
 
@@ -157,9 +157,9 @@ namespace IslandAlgorithm {
 
         // Initialize/declare required new objects.
         int clusterID = 0;
+        numDoubleCountsAvoided = 0; 
         usedTowerIDs.clear();
         TowerMap clusteredTowers;
-        numDoubleCountsAvoided = 0; 
 
         foreach (IslandAlgorithmTower& seed, seedTowers) {
             // Begin by inserting the seed tower, which defines a cluster.
@@ -265,7 +265,7 @@ namespace IslandAlgorithm {
     }
 
     // Essentially a 'ToString' method for a list of seed towers.
-    void PrintSeeds(std::list<IslandAlgorithmTower>& seeds) {
+    void _PrintSeeds(std::list<IslandAlgorithmTower>& seeds) {
         foreach (IslandAlgorithmTower& seed, seeds) {
             cout << "seed (energy, eta, phi) = (" 
                  << seed.getEnergy() << ", "
@@ -275,8 +275,8 @@ namespace IslandAlgorithm {
         }
     }
 
-    void _PrintTowerMsg(IslandAlgorithmTower tower, int index, const char* phiOrEta) {
-        cout << index << ". [" << phiOrEta << "] "
+    void _PrintTowerMsg(IslandAlgorithmTower tower, int index, const char* towerType) {
+        cout << index << ". [" << towerType << "] "
              << "Inserted towerID "  << tower.getID()     << endl
              << "\tEnergy="       << tower.getEnergy() << "; "
              << "Eta="           << tower.getEtaCenter() << "; "
@@ -292,11 +292,11 @@ namespace IslandAlgorithm {
 
     void _PrintDebugMsg(IslandAlgorithmTower towerHelper) {  
         numDoubleCountsAvoided++;
-        cout << "\n ----------- DOUBLE-COUNT " << numDoubleCountsAvoided 
-             << " AVOIDED ----------- "  << endl
-             << "Tower ID:\t"   << towerHelper.getID()              << endl
-             << "Tower Eta:\t"  << towerHelper.getEtaCenter()       << endl
-             << "Tower Phi:\t"  << towerHelper.getPhiCenter()       << endl;
+        cout << "\n -------------------------------------------------------- "  << endl
+             << " DOUBLE-COUNT "    << numDoubleCountsAvoided << " AVOIDED. "   << endl
+             << "Tower ID:\t"       << towerHelper.getID()              << endl
+             << "Tower Eta:\t"      << towerHelper.getEtaCenter()       << endl
+             << "Tower Phi:\t"      << towerHelper.getPhiCenter()       << endl;
     }
 }
 

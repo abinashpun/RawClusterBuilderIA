@@ -11,8 +11,14 @@ if [ $# -eq 0 ]; then
     exit
 elif [ $# -eq 1 ] && [ "$1" == "test" ]; then 
     echo "Starting a test run . . . "
+    echo "Enter test particle type (EMinus, Gamma, Pi0)"
+    read TEST_PARTICLE
+    echo "Enter desired particle pT: "
+    read TEST_PT
+    echo "Enter seed threshold: " 
+    read TEST_THRESH
     cd ~/macros/g4simulations;
-    root -b -q "Fun4All_G4_sPHENIX.C(1, 25.0, 0.1, \"Pi0\", 0)"
+    root -b -q "Fun4All_G4_sPHENIX.C(1, ${TEST_PT}, ${TEST_THRESH}, \"${TEST_PARTICLE}\", 0)"
     exit
 fi
 
