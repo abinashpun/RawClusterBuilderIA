@@ -1,8 +1,12 @@
-# Bugs discovered (currently fixing):
-* Forgot to ensure that no double-counting of towers occurs. In other words, I found events containing two
+# General Overview:
+This an sPHENIX module that implements the island algorithm (the 'IA' in 'RawClusterBuilderIA') as used by the CMS
+collaboration for clustering in the EMCal. The algorithm itself can be found in include/IslandAlgorithm.h.
+
+# Bugs discovered:
+* [__FIXED__] Forgot to ensure that no double-counting of towers occurs. In other words, I found events containing two
 clusters that have one or more towers in common. 
 
-# Initial Performance Checks:
+# Initial Performance Checks (old):
 (threshold seed energy set at 0.1 GeV). 
 
 ## __Single Electron__:
